@@ -1,0 +1,17 @@
+.sidebar-column .sidebar {
+    width: 95%;
+    background: #2c789038;
+    padding: 10px;
+}
+.company-widget .company-info li {
+    border-bottom: 1px solid #e9e9e9;
+    border-radius: 0;
+    margin-bottom: 0;
+    padding: 18px 16px;
+}
+.company-widget .company-info li:last-child {
+    border-bottom: none;
+}
+.sidebar-widget {
+    border: 1px solid #4e9c5b;
+}
