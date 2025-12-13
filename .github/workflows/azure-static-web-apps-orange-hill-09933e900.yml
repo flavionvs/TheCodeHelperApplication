@@ -23,7 +23,7 @@ jobs:
         env:
           VITE_API_BASE_URL: https://thecodehelper-api.azurewebsites.net
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ORANGE_HILL_09933E900 }}
+          azure_static_web_apps_api_token: ${{ secrets.SWA_DEPLOY_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "/"
