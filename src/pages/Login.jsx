@@ -43,20 +43,14 @@ const Login = () => {
         setTimeout(() => {
   const redirectUrl = localStorage.getItem("redirectAfterLogin");
 
-  const basePath = import.meta.env.BASE_URL; // '/codehelper/web/'
-
   let finalRedirect = "/user/dashboard";
 
   if (redirectUrl) {
     localStorage.removeItem("redirectAfterLogin");
-
-    // Prevent double BASE_URL
-    const cleanRedirect = redirectUrl.replace(basePath, "");
-
-    finalRedirect = cleanRedirect.startsWith("/") ? cleanRedirect : `/${cleanRedirect}`;
+    finalRedirect = redirectUrl.startsWith("/") ? redirectUrl : `/${redirectUrl}`;
   }
 
-  window.location.href = `${basePath}${finalRedirect}`;
+  navigate(finalRedirect);
 }, 1000);
 
 
