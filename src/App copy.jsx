@@ -112,7 +112,7 @@ const App = () => {
     <Router>
       <AppLayout />
     </Router>
-    // <BrowserRouter basename="/codehelper/web">
+    // <BrowserRouter>
     //   <AppLayout />
     // </BrowserRouter>
   );
