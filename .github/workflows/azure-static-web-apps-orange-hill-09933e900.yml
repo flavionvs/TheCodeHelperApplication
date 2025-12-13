@@ -18,6 +18,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      # ✅ PROVE the secret is actually being passed (prints length only)
+      - name: Validate deploy token is present
+        shell: bash
+        env:
+          SWA_TOKEN: ${{ secrets.SWA_DEPLOY_TOKEN }}
+        run: |
+          if [ -z "$SWA_TOKEN" ]; then
+            echo "ERROR: SWA_DEPLOY_TOKEN is EMPTY (secret not passed to this workflow)."
+            exit 1
+          fi
+          echo "SWA_DEPLOY_TOKEN length: ${#SWA_TOKEN}"
+
       - name: Build And Deploy
         uses: Azure/static-web-apps-deploy@v1
         env:
@@ -38,6 +50,6 @@ jobs:
       - name: Close Pull Request
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ORANGE_HILL_09933E900 }}
+          azure_static_web_apps_api_token: ${{ secrets.SWA_DEPLOY_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "close"
