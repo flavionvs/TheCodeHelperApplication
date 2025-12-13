@@ -178,7 +178,7 @@ const App = () => {
   // </Elements>  
     <Elements stripe={stripePromise}>  
     <LoaderProvider > {/* <- Global loader shown here */}
-    <BrowserRouter basename="/codehelper/web">
+    <BrowserRouter>
     <WalletProvider>
       <AppLayout />
     </WalletProvider>

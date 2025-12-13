@@ -1,8 +1,9 @@
 import axios from "axios";
 import { handleValidationErrors } from './handleValidationErrors';
 
-// const API_BASE_URL = "http://localhost:8000/api"; // Test
-const API_BASE_URL = "https://ndpelectronics.com/codehelper/api"; // Live
+// ✅ Vite env var (build-time). Fallback keeps local dev working.
+const API_BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000") + "/api";
 
 export const apiRequest = async (method, endpoint, data = {}, headers = {}) => {
   // Remove previous errors
@@ -22,25 +23,22 @@ export const apiRequest = async (method, endpoint, data = {}, headers = {}) => {
       },
     });
 
-    // If status is false
     if (!response.data.status) {
-      // Handle validation errors
       let validation_error = false;
       if (response.data.message === 'Validation error') {
         const validationErrors = response.data.data;
-        handleValidationErrors(validationErrors);       
+        handleValidationErrors(validationErrors);
         validation_error = true;
       }
-      
+
       return {
         success: false,
         message: response.data.message || "Validation failed",
-        validation_error : validation_error,
+        validation_error,
         data: response.data
       };
     }
 
-    // If status is true
     return { success: true, data: response.data };
 
   } catch (error) {
