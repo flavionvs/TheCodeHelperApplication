@@ -49,7 +49,7 @@ const Login = () => {
     localStorage.removeItem("redirectAfterLogin");
     finalRedirect = redirectUrl.startsWith("/") ? redirectUrl : `/${redirectUrl}`;
   }
-
+  console.log("LOGIN redirect:", finalRedirect);
   navigate(finalRedirect);
 }, 1000);
 
