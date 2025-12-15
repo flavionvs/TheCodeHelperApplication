@@ -218,7 +218,7 @@ const Register = () => {
                         <option>Germany</option>
                         <option>Greece</option>
                         <option>Hong Kong</option>
-                        <option selected>India</option>
+                        <option>India</option>
                         <option>Indonesia</option>
                         <option>Iran</option>
                         <option>Iraq</option>
