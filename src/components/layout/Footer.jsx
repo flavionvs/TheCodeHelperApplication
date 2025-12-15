@@ -17,9 +17,8 @@ const Footer = () => {
                   </Link>
                 </div>
                 <p className="address">
-                  Auckland<br />
-                  New Zealand. <br />
-                  <a href="mailto:support@thecodeHelper.com" className="email">support@thecodeHelper.com</a>
+                  Auckland, New Zealand.<br />
+                  <a href="mailto:support@thecodehelper.com" className="email">support@thecodehelper.com</a>
                 </p>
               </div>
             </div>

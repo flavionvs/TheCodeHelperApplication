@@ -55,7 +55,7 @@ const [mobileOpen, setMobileOpen] = useState(false);
                <Link to="/" className="theme-btn btn-style-one">Job Post</Link>
                <span>
                  <span className="contact-info">
-                   <span className="address">Auckland <br/>New Zealand</span>
+                   <span className="address">Auckland, New Zealand<br/></span>
                    <Link to="/" className="email">support@codehelper.com</Link>
                  </span>
                  <span className="social-links">

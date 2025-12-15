@@ -14,7 +14,7 @@ const Register = () => {
     role: type,
     name: "",
     phone: "",
-    country: "India",
+    country: "",
     term_and_condition: "",
     email: email || "",
     password: "",

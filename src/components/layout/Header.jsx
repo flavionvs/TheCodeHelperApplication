@@ -53,9 +53,7 @@ const Header = () => {
                       <Link to="/">123 456 7890</Link>
                     </span>
                     <span className="address">
-                      Auckland <br />
-                      New Zealand.
-                    </span>
+                      Auckland, New Zealand. <br /></span>
                     <Link to="/" className="email">
                       support@thecodehelper.com
                     </Link>
