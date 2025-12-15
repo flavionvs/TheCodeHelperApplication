@@ -55,8 +55,7 @@ const [mobileOpen, setMobileOpen] = useState(false);
                <Link to="/" className="theme-btn btn-style-one">Job Post</Link>
                <span>
                  <span className="contact-info">
-                   <span className="phone-num"><span>Call us</span><Link to="/">123 456 7890</Link></span>
-                   <span className="address">329 Queensberry Street, North Melbourne VIC <br/>3051, Australia.</span>
+                   <span className="address">Auckland <br/>New Zealand</span>
                    <Link to="/" className="email">support@codehelper.com</Link>
                  </span>
                  <span className="social-links">

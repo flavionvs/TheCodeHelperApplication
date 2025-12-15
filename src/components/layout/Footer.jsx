@@ -16,14 +16,10 @@ const Footer = () => {
                     <img src={logo} alt="Logo" />
                   </Link>
                 </div>
-                <p className="phone-num">
-                  <span>Call us </span>
-                  <a href="tel:1234567890">123 456 7890</a>
-                </p>
                 <p className="address">
-                  329 Queensberry Street, North Melbourne VIC<br />
-                  3051, Australia. <br />
-                  <a href="mailto:support@CodeHelper.com" className="email">support@CodeHelper.com</a>
+                  Auckland<br />
+                  New Zealand. <br />
+                  <a href="mailto:support@thecodeHelper.com" className="email">support@thecodeHelper.com</a>
                 </p>
               </div>
             </div>
