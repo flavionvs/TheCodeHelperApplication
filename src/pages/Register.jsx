@@ -7,11 +7,12 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 const Register = () => {
   const [param] = useSearchParams();
-  const type = param.get("type");
+  const type = param.get("type");   // expected values: "Freelancer" or "Client"
   const email = param.get("email");
 
+  // ✅ No default role – user must choose (unless URL provides it)
   const [formData, setFormData] = useState({
-    role: type,
+    role: "",
     name: "",
     phone: "",
     country: "",
@@ -22,44 +23,75 @@ const Register = () => {
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [active, setActive] = useState("Freelancer");
-  const navigate = useNavigate(); // ✅ Initialize navigate function
+  const [active, setActive] = useState(""); // ✅ no default selected
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (type) {
       setFormData((prev) => ({ ...prev, role: type }));
       setActive(type);
     }
-    if (type) {
-      setFormData((prev) => ({ ...prev, email: email }));
+    if (email) {
+      setFormData((prev) => ({ ...prev, email }));
     }
   }, [type, email]);
 
   const clickOnRole = (role) => {
     setActive(role);
-    setFormData({ ...formData, role });
+    setFormData((prev) => ({ ...prev, role }));
+    setErrors((prev) => ({ ...prev, role: "" }));
   };
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? (checked ? "1" : "") : value,
-    });
-    setErrors({ ...errors, [name]: "" });
+    const { name, value, type: inputType, checked } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: inputType === "checkbox" ? (checked ? "1" : "") : value,
+    }));
+
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrors({});
-      const payload = {
-    ...formData,
-    role: "Freelancer", 
-  };
+
+    // ✅ Frontend validation to avoid bad payload
+    if (!formData.role) {
+      toast.error("Please choose Client or Freelancer", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.country) {
+      toast.error("Please select a country", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (formData.term_and_condition !== "1") {
+      toast.error("You must accept Terms and Conditions", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      setLoading(false);
+      return;
+    }
+
+    // ✅ DO NOT override role here. Use what user selected.
+    const payload = { ...formData };
 
     try {
       const response = await apiRequest("POST", "/register", payload);
+
       if (response.data?.status) {
         if (response.data?.access_token) {
           localStorage.setItem("token", response.data.access_token);
@@ -71,23 +103,27 @@ const Register = () => {
             `user_${response.data?.data.personal.id}`,
             JSON.stringify(response.data?.data?.personal)
           );
-          localStorage.setItem(
-            `professional_${response.data?.data.professional.id}`,
-            JSON.stringify(response.data?.data?.professional)
-          );
+
+          // Some APIs may not return professional object for Client, so guard it
+          if (response.data?.data?.professional?.id) {
+            localStorage.setItem(
+              `professional_${response.data?.data.professional.id}`,
+              JSON.stringify(response.data?.data?.professional)
+            );
+          }
         }
+
         toast.success(response.data.message, {
           position: "top-right",
           autoClose: 3000,
         });
 
-        if (formData.role === "Client") {
+        // ✅ Redirect based on chosen role
+        if (payload.role === "Client") {
           navigate("/user/project/create");
         } else {
           navigate("/user/dashboard");
         }
-        setTimeout(() => {
-        }, 1000);
       } else {
         if (response.data?.message) {
           toast.error(response.data.message, {
@@ -115,35 +151,40 @@ const Register = () => {
           <div className="login-form default-form">
             <div className="form-inner">
               <h3>Create a Free Account</h3>
+
               <form onSubmit={handleSubmit}>
+                {/* Role chooser */}
                 <div className="form-group">
                   <div className="btn-box row">
                     <div className="col-lg-6 col-md-12">
-                      <a
-                        href="#"
+                      <button
+                        type="button"
                         className={`theme-btn btn-style-${
                           active === "Freelancer" ? "seven" : "four"
                         }`}
                         onClick={() => clickOnRole("Freelancer")}
                       >
                         Freelancer
-                      </a>
+                      </button>
                     </div>
+
                     <div className="col-lg-6 col-md-12">
-                      <a
-                        href="#"
+                      <button
+                        type="button"
                         className={`theme-btn btn-style-${
                           active === "Client" ? "seven" : "four"
                         }`}
                         onClick={() => clickOnRole("Client")}
                       >
                         Client
-                      </a>
+                      </button>
                     </div>
                   </div>
+
+                  {errors.role && <p className="error-text">{errors.role}</p>}
                 </div>
 
-                {/* Name Field */}
+                {/* Name + Phone */}
                 <div className="form-group">
                   <div className="row">
                     <div className="col-lg-6 col-md-12">
@@ -160,6 +201,7 @@ const Register = () => {
                         <p className="error-text">{errors.name}</p>
                       )}
                     </div>
+
                     <div className="col-lg-6 col-md-12">
                       <label>Phone</label>
                       <input
@@ -176,87 +218,99 @@ const Register = () => {
                     </div>
                   </div>
                 </div>
-                <div class="form-group">
+
+                {/* Country + Email */}
+                <div className="form-group">
                   <div className="row">
                     <div className="col-lg-6 col-md-12">
-                      <label>County</label>
-                      <select name="country" class="chosen-select">
-                        <option>Select Country</option>
-                        <option>Afghanistan</option>
-                        <option>Albania</option>
-                        <option>Algeria</option>
-                        <option>Andorra</option>
-                        <option>Angola</option>
-                        <option>Argentina</option>
-                        <option>Armenia</option>
-                        <option>Australia</option>
-                        <option>Austria</option>
-                        <option>Azerbaijan</option>
-                        <option>Bahrain</option>
-                        <option>Bangladesh</option>
-                        <option>Belarus</option>
-                        <option>Belgium</option>
-                        <option>Belize</option>
-                        <option>Benin</option>
-                        <option>Bhutan</option>
-                        <option>Bolivia</option>
-                        <option>Bosnia and Herzegovina</option>
-                        <option>Botswana</option>
-                        <option>Brazil</option>
-                        <option>Bulgaria</option>
-                        <option>Canada</option>
-                        <option>China</option>
-                        <option>Colombia</option>
-                        <option>Croatia</option>
-                        <option>Cuba</option>
-                        <option>Cyprus</option>
-                        <option>Czech Republic</option>
-                        <option>Denmark</option>
-                        <option>Egypt</option>
-                        <option>Finland</option>
-                        <option>France</option>
-                        <option>Germany</option>
-                        <option>Greece</option>
-                        <option>Hong Kong</option>
-                        <option>India</option>
-                        <option>Indonesia</option>
-                        <option>Iran</option>
-                        <option>Iraq</option>
-                        <option>Ireland</option>
-                        <option>Italy</option>
-                        <option>Japan</option>
-                        <option>Kuwait</option>
-                        <option>Lebanon</option>
-                        <option>Malaysia</option>
-                        <option>Mexico</option>
-                        <option>Morocco</option>
-                        <option>Netherlands</option>
-                        <option>New Zealand</option>
-                        <option>Nigeria</option>
-                        <option>Norway</option>
-                        <option>Pakistan</option>
-                        <option>Philippines</option>
-                        <option>Poland</option>
-                        <option>Portugal</option>
-                        <option>Qatar</option>
-                        <option>Romania</option>
-                        <option>Russia</option>
-                        <option>Saudi Arabia</option>
-                        <option>Singapore</option>
-                        <option>South Africa</option>
-                        <option>South Korea</option>
-                        <option>Spain</option>
-                        <option>Sweden</option>
-                        <option>Switzerland</option>
-                        <option>Thailand</option>
-                        <option>Turkey</option>
-                        <option>Ukraine</option>
-                        <option>United Arab Emirates</option>
-                        <option>United Kingdom</option>
-                        <option>United States</option>
-                        <option>Vietnam</option>
+                      <label>Country</label>
+                      <select
+                        name="country"
+                        className="chosen-select"
+                        value={formData.country || ""}
+                        onChange={handleChange}
+                      >
+                        <option value="">Select Country</option>
+                        <option value="Afghanistan">Afghanistan</option>
+                        <option value="Albania">Albania</option>
+                        <option value="Algeria">Algeria</option>
+                        <option value="Andorra">Andorra</option>
+                        <option value="Angola">Angola</option>
+                        <option value="Argentina">Argentina</option>
+                        <option value="Armenia">Armenia</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Austria">Austria</option>
+                        <option value="Azerbaijan">Azerbaijan</option>
+                        <option value="Bahrain">Bahrain</option>
+                        <option value="Bangladesh">Bangladesh</option>
+                        <option value="Belarus">Belarus</option>
+                        <option value="Belgium">Belgium</option>
+                        <option value="Belize">Belize</option>
+                        <option value="Benin">Benin</option>
+                        <option value="Bhutan">Bhutan</option>
+                        <option value="Bolivia">Bolivia</option>
+                        <option value="Bosnia and Herzegovina">
+                          Bosnia and Herzegovina
+                        </option>
+                        <option value="Botswana">Botswana</option>
+                        <option value="Brazil">Brazil</option>
+                        <option value="Bulgaria">Bulgaria</option>
+                        <option value="Canada">Canada</option>
+                        <option value="China">China</option>
+                        <option value="Colombia">Colombia</option>
+                        <option value="Croatia">Croatia</option>
+                        <option value="Cuba">Cuba</option>
+                        <option value="Cyprus">Cyprus</option>
+                        <option value="Czech Republic">Czech Republic</option>
+                        <option value="Denmark">Denmark</option>
+                        <option value="Egypt">Egypt</option>
+                        <option value="Finland">Finland</option>
+                        <option value="France">France</option>
+                        <option value="Germany">Germany</option>
+                        <option value="Greece">Greece</option>
+                        <option value="Hong Kong">Hong Kong</option>
+                        <option value="India">India</option>
+                        <option value="Indonesia">Indonesia</option>
+                        <option value="Iran">Iran</option>
+                        <option value="Iraq">Iraq</option>
+                        <option value="Ireland">Ireland</option>
+                        <option value="Italy">Italy</option>
+                        <option value="Japan">Japan</option>
+                        <option value="Kuwait">Kuwait</option>
+                        <option value="Lebanon">Lebanon</option>
+                        <option value="Malaysia">Malaysia</option>
+                        <option value="Mexico">Mexico</option>
+                        <option value="Morocco">Morocco</option>
+                        <option value="Netherlands">Netherlands</option>
+                        <option value="New Zealand">New Zealand</option>
+                        <option value="Nigeria">Nigeria</option>
+                        <option value="Norway">Norway</option>
+                        <option value="Pakistan">Pakistan</option>
+                        <option value="Philippines">Philippines</option>
+                        <option value="Poland">Poland</option>
+                        <option value="Portugal">Portugal</option>
+                        <option value="Qatar">Qatar</option>
+                        <option value="Romania">Romania</option>
+                        <option value="Russia">Russia</option>
+                        <option value="Saudi Arabia">Saudi Arabia</option>
+                        <option value="Singapore">Singapore</option>
+                        <option value="South Africa">South Africa</option>
+                        <option value="South Korea">South Korea</option>
+                        <option value="Spain">Spain</option>
+                        <option value="Sweden">Sweden</option>
+                        <option value="Switzerland">Switzerland</option>
+                        <option value="Thailand">Thailand</option>
+                        <option value="Turkey">Turkey</option>
+                        <option value="Ukraine">Ukraine</option>
+                        <option value="United Arab Emirates">
+                          United Arab Emirates
+                        </option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="United States">United States</option>
+                        <option value="Vietnam">Vietnam</option>
                       </select>
                     </div>
+
                     <div className="col-lg-6 col-md-12">
                       <label>Email Address</label>
                       <input
@@ -274,7 +328,7 @@ const Register = () => {
                   </div>
                 </div>
 
-                {/* Password Field */}
+                {/* Password */}
                 <div className="form-group">
                   <label>Password</label>
                   <input
@@ -289,6 +343,8 @@ const Register = () => {
                     <p className="error-text">{errors.password}</p>
                   )}
                 </div>
+
+                {/* Terms */}
                 <div className="form-group">
                   <label>
                     <input
@@ -302,6 +358,7 @@ const Register = () => {
                   </label>
                 </div>
 
+                {/* Submit */}
                 <div className="form-group">
                   <button
                     className="button-87 text-uppercase w-100 mx-0"
@@ -312,30 +369,10 @@ const Register = () => {
                   </button>
                 </div>
               </form>
+
               <div className="text">
                 Already have an account? <Link to="/login">Login</Link>
               </div>
-
-              {/* <div className="bottom-box">
-                <div className="divider">
-                  <span>or</span>
-                </div>
-                <div className="btn-box row">
-                  <div className="col-lg-6 col-md-12">
-                    <a
-                      href="#"
-                      className="theme-btn social-btn-two facebook-btn"
-                    >
-                      <i className="fab fa-facebook-f"></i> Log In via Facebook
-                    </a>
-                  </div>
-                  <div className="col-lg-6 col-md-12">
-                    <a href="#" className="theme-btn social-btn-two google-btn">
-                      <i className="fab fa-google"></i> Log In via Gmail
-                    </a>
-                  </div>
-                </div>
-              </div> */}
             </div>
           </div>
         </div>

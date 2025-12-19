@@ -164,11 +164,11 @@ const Project = () => {
                       </div>
 
                       <div className="form-group col-lg-6 col-md-12">
-                        <label>Category</label>                        
+                        <label>Category</label>
                         <SelectDropdown
                           name="category_id"
                           apiEndpoint="/category"
-                          selectedValue={formData.category_id || []} // Single value
+                          selectedValue={formData.category_id ?? ""} // ✅ Single value
                           onChange={handleChange}
                           multiple={false}
                         />
