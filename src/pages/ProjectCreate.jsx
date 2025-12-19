@@ -231,7 +231,6 @@ const ProjectCreate = () => {
                           selectedValue={formData.category_id || []}
                           onChange={handleChange}
                           multiple={false}
-                          required
                         />
                         {errors.category_id && (
                           <div className="text-danger small mt-1">
