@@ -398,7 +398,7 @@ const Shop = () => {
                             type="button"
                             className="button-48"
                             onClick={() =>
-                              !applied && handleProposalClick(project.id)
+                              !applied && handleProposalClick(project.route_id)
                             }
                             disabled={applied}
                           >
