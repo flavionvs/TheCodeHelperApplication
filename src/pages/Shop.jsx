@@ -16,7 +16,6 @@ const Shop = () => {
   const user = JSON.parse(localStorage.getItem(`user_${user_id}`));
   const navigate = useNavigate(); // ✅ Now navigate is available
   const [projects, setProjects] = useState([]);
-  const [appliedProjects, setAppliedProjects] = useState([]);
   const [loader, setLoader] = useState(true);
   const [button, setButton] = useState(false);
   const [page, setPage] = useState(1);
@@ -168,7 +167,6 @@ const Shop = () => {
           autoClose: 3000,
         });
 
-        setAppliedProjects((prev) => [...prev, projectId]);
 
         const modalEl = document.getElementById("exampleModal");
         const modalInstance = bootstrap.Modal.getInstance(modalEl);
@@ -360,8 +358,7 @@ const Shop = () => {
                 <p>Loading...</p>
               ) : Array.isArray(projects) && projects.length > 0 ? (
                 projects.map((project) => {
-                  const applied =
-                    appliedProjects.includes(project.id) || project.applied;
+                  const applied = project.applied === true;
                   return (
                     <div
                       key={project.id}
@@ -403,7 +400,7 @@ const Shop = () => {
                             onClick={() =>
                               !applied && handleProposalClick(project.id)
                             }
-                            disabled={appliedProjects.includes(project.id)}
+                            disabled={applied}
                           >
                             <span className="text">
                             {applied
