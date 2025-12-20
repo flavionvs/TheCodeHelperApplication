@@ -40,39 +40,48 @@ const Shop = () => {
   const [search, setSearch] = useState(text ?? "");
   const [entries, setEntries] = useState(10);
 
+  // Load categories once
+  useEffect(() => {
+    fetchedCategory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // When slug/entries changes, reset page to 1 and fetch
+  useEffect(() => {
+    setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, entries]);
+
+  // Fetch projects whenever page changes
   useEffect(() => {
     fetchProjects(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, slug, entries]);
 
+  // Debounced search
   useEffect(() => {
     const delay = setTimeout(() => {
-      // if searching, optionally reset to page 1
-      fetchProjects(page);
+      setPage(1);
+      fetchProjects(1);
     }, 300);
 
     return () => clearTimeout(delay);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  useEffect(() => {
-    fetchedCategory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const fetchProjects = async (currentPage) => {
     try {
       showLoader();
       setLoader(true);
 
-      // IMPORTANT: slug can be undefined when route is /projects
-      const safeCategory = slug ?? "";
+      const safeCategory = slug ?? ""; // prevents "undefined"
+      const safeEntries = Number(entries) || 10;
 
       const response = await apiRequest(
         "POST",
         `/filter?page=${currentPage}&user_id=${user_id}&category=${safeCategory}&search=${encodeURIComponent(
           search ?? ""
-        )}&entries=${entries}`,
+        )}&entries=${safeEntries}`,
         null,
         {
           Authorization: `Bearer ${token}`,
@@ -80,15 +89,17 @@ const Shop = () => {
       );
 
       if (response.data?.status) {
-        setProjects(response.data.data || []);
+        const list = response.data?.data ?? [];
+        setProjects(list);
 
-        const cp = response.data.page?.current_page ?? 1;
-        const f = response.data.page?.from ?? 0;
-        const t = response.data.page?.to ?? 0;
-        const tot = response.data.page?.total ?? 0;
-        const lp = response.data.page?.last_page ?? 1;
+        const pg = response.data.page || {};
+        const current = pg.current_page || 1;
+        const f = pg.from || 1;
+        const t = pg.to || 1;
+        const tot = pg.total || list.length || 0;
+        const lp = pg.last_page || 1;
 
-        setPage(cp);
+        setPage(current);
         setFrom(f);
         setTo(t);
         setTotal(tot);
@@ -102,9 +113,10 @@ const Shop = () => {
           onPageChange: setPage,
         });
       } else {
-        toast.error("Failed to fetch projects");
+        toast.error(response.data?.message || "Failed to fetch projects");
       }
     } catch (error) {
+      console.error(error);
       toast.error("Error loading projects");
     } finally {
       hideLoader();
@@ -124,10 +136,11 @@ const Shop = () => {
       if (response.data?.status) {
         setCategory(response.data.data || []);
       } else {
-        toast.error("Failed to fetch category");
+        toast.error(response.data?.message || "Failed to fetch categories");
       }
     } catch (error) {
-      toast.error("Error loading category");
+      console.error(error);
+      toast.error("Error loading categories");
     } finally {
       hideLoader();
       setLoader(false);
@@ -138,36 +151,41 @@ const Shop = () => {
     setAttachments(e.target.files);
   };
 
-  const handleProposalClick = (routeId) => {
+  const handleProposalClick = (routeIdOrBusinessId) => {
     const token = localStorage.getItem("token");
 
-    if (token) {
-      if (!routeId) {
-        toast.error("Project id missing. Please refresh and try again.");
-        return;
-      }
-
-      setProjectId(routeId);
-
-      const modal = new bootstrap.Modal(document.getElementById("exampleModal"));
-      modal.show();
-    } else {
+    if (!token) {
       localStorage.setItem("redirectAfterLogin", window.location.pathname);
       navigate("/login");
+      return;
     }
-  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!projectId) {
+    if (!routeIdOrBusinessId) {
       toast.error("Project id missing. Please refresh and try again.");
       return;
     }
 
+    setProjectId(routeIdOrBusinessId);
+
+    const modalEl = document.getElementById("exampleModal");
+    if (!modalEl) return;
+
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoader(true);
     setErrors({});
     setButton(true);
+
+    if (!projectId) {
+      toast.error("Project id missing. Please refresh and try again.");
+      setLoader(false);
+      setButton(false);
+      return;
+    }
 
     const formData = new FormData();
     formData.append("description", description);
@@ -189,28 +207,24 @@ const Shop = () => {
           autoClose: 3000,
         });
 
-        // Close modal
+        // Refresh list so applied flag updates (backend should return applied=true)
+        fetchProjects(page);
+
         const modalEl = document.getElementById("exampleModal");
         const modalInstance = bootstrap.Modal.getInstance(modalEl);
         modalInstance?.hide();
-
-        // Clear form
-        setDescription("");
-        setHours("");
-        setRate("");
-        setAttachments([]);
-        setProjectId("");
-
-        // Refresh list so applied flag updates
-        fetchProjects(page);
       } else {
-        toast.error(
-          response.data?.message || response.message || "Something went wrong.",
-          { position: "top-right", autoClose: 3000 }
-        );
+        toast.error(response.data?.message || response.message || "Something went wrong.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       }
     } catch (error) {
-      toast.error("Something went wrong!", { position: "top-right", autoClose: 3000 });
+      console.error(error);
+      toast.error("Something went wrong!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } finally {
       setLoader(false);
       setButton(false);
@@ -288,6 +302,31 @@ const Shop = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* Hidden blocks kept as-is */}
+                <div className="filter-block d-none">
+                  <h4>Tags</h4>
+                  <ul className="tags-style-one list-unstyled p-0">
+                    <li>
+                      <Link to="/">app</Link>
+                    </li>
+                    <li>
+                      <Link to="/">administrative</Link>
+                    </li>
+                    <li>
+                      <Link to="/">android</Link>
+                    </li>
+                    <li>
+                      <Link to="/">wordpress</Link>
+                    </li>
+                    <li>
+                      <Link to="/">design</Link>
+                    </li>
+                    <li>
+                      <Link to="/">react</Link>
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -304,7 +343,6 @@ const Shop = () => {
                 </div>
 
                 <div className="col-6 d-flex justify-content-end align-items-center">
-                  {/* FIX: 'Clien' -> 'Client' */}
                   <Link
                     className="button-87"
                     to={user && user.role === "Client" ? "/user/project/create" : "/login"}
@@ -318,11 +356,11 @@ const Shop = () => {
                       value={entries}
                       onChange={(e) => setEntries(Number(e.target.value))}
                     >
-                      <option value="10">Show 10</option>
-                      <option value="20">Show 20</option>
-                      <option value="30">Show 30</option>
-                      <option value="40">Show 40</option>
-                      <option value="50">Show 50</option>
+                      <option value={10}>Show 10</option>
+                      <option value={20}>Show 20</option>
+                      <option value={30}>Show 30</option>
+                      <option value={40}>Show 40</option>
+                      <option value={50}>Show 50</option>
                     </select>
                   </div>
                 </div>
@@ -335,6 +373,9 @@ const Shop = () => {
               ) : Array.isArray(projects) && projects.length > 0 ? (
                 projects.map((project) => {
                   const applied = project.applied === true;
+
+                  // IMPORTANT: route_id preferred, fallback to id
+                  const routeId = project.route_id ?? project.id;
 
                   return (
                     <div key={project.id} className="job-block col-md-6 col-sm-12 mb-3">
@@ -362,7 +403,7 @@ const Shop = () => {
                           <button
                             type="button"
                             className="button-48"
-                            onClick={() => !applied && handleProposalClick(project.route_id)}
+                            onClick={() => !applied && handleProposalClick(routeId)}
                             disabled={applied}
                           >
                             <span className="text">
@@ -473,7 +514,7 @@ const Shop = () => {
                       <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
                         Close
                       </button>
-                      <button type="submit" className="btn btn-primary" disabled={button}>
+                      <button type="submit" className="btn btn-primary">
                         {button ? "Please wait..." : "Submit"}
                       </button>
                     </div>
@@ -482,49 +523,51 @@ const Shop = () => {
               </div>
             </div>
 
+            <section className="subscribe-section at-home22 py-xl-0">
+              <div className="auto-container py-5">
+                <div
+                  className="outer-box d-flex wow fadeInUp animated"
+                  style={{ visibility: "visible", animationName: "fadeInUp" }}
+                >
+                  <img src="src/assets/images/newsletter-img-1.png" alt="" />
+                  <div className="sec-title">
+                    <h3 className="text-white">
+                      Join. Work. Thrive – Your Freelance Journey Starts Here!
+                    </h3>
+                    <div className="text-white">
+                      Unlock endless opportunities as a freelancer. Sign up today and start working
+                      on your own terms!
+                    </div>
+                  </div>
+                  <div className="form-column">
+                    <div className="subscribe-form">
+                      <form method="post" action="#">
+                        <div className="form-group">
+                          <div className="response"></div>
+                        </div>
+                        <div className="form-group">
+                          <input
+                            type="email"
+                            name="email"
+                            className="email"
+                            defaultValue=""
+                            placeholder="Your e-mail"
+                            required
+                          />
+                          <button type="button" id="subscribe-newsletters" className="theme-btn btn-style-one">
+                            Sign Up <i className="bi bi-arrow-up-right ms-2"></i>
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
           </div>
         </div>
       </div>
-
-      <section className="subscribe-section at-home22 py-xl-0">
-        <div className="auto-container py-5">
-          <div
-            className="outer-box d-flex wow fadeInUp animated"
-            style={{ visibility: "visible", animationName: "fadeInUp" }}
-          >
-            <img src="src/assets/images/newsletter-img-1.png" alt="" />
-            <div className="sec-title">
-              <h3 className="text-white">Join. Work. Thrive – Your Freelance Journey Starts Here!</h3>
-              <div className="text-white">
-                Unlock endless opportunities as a freelancer. Sign up today and start working on
-                your own terms!
-              </div>
-            </div>
-            <div className="form-column">
-              <div className="subscribe-form">
-                <form method="post" action="#">
-                  <div className="form-group">
-                    <div className="response"></div>
-                  </div>
-                  <div className="form-group">
-                    <input
-                      type="email"
-                      name="email"
-                      className="email"
-                      value=""
-                      placeholder="Your e-mail"
-                      required=""
-                    />
-                    <button type="button" id="subscribe-newsletters" className="theme-btn btn-style-one">
-                      Sign Up <i className="bi bi-arrow-up-right ms-2"></i>
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
     </>
   );
 };
