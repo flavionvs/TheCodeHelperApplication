@@ -190,7 +190,7 @@ const ProjectDetail = () => {
           {projects.status && (
             <div className="mb-2">
               <strong>Status:</strong>{" "}
-              <span className="badge badge-primary">{projects.status}</span>
+              <span>{projects.status}</span>
             </div>
           )}
 
