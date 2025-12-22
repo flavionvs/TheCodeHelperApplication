@@ -210,8 +210,29 @@ const ProjectList = () => {
       {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => row.original.status,
-      },
+        cell: ({ row }) => {
+          const status = (row.original.status || "").toLowerCase();
+
+          let className = "badge badge-tertiary";
+          if (status === "pending") className = "badge badge-primary";
+          else if (status === "cancelled") className = "badge badge-danger";
+          else if (status === "completed") className = "badge badge-success";
+          else if (status === "approved") className = "badge badge-secondary";
+
+          const LABELS = {
+            pending: "Pending",
+            approved: "Approved",
+            completed: "Completed",
+            cancelled: "Cancelled",
+            not_applied: "Not Applied",
+          };
+
+          const label = LABELS[status] ?? (row.original.status ?? "");
+
+          return <span className={className}>{label}</span>;
+        },
+      }
+
 
       
 
