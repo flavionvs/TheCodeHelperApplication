@@ -2,12 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { apiRequest } from "../utils/api";
-import parse from 'html-react-parser';
+import parse from "html-react-parser";
 
 const ProjectDetail = () => {
-
   const navigate = useNavigate(); // ✅ Now navigate is available
-
 
   const [description, setDescription] = useState("");
   const [hours, setHours] = useState("");
@@ -25,24 +23,18 @@ const ProjectDetail = () => {
   const [submitted, setSubmitted] = useState(false);
   const [projects, setProjects] = useState({});
 
-
   useEffect(() => {
     fetchProjects();
   }, []);
 
   const fetchProjects = async () => {
     try {
-      const response = await apiRequest(
-        "GET",
-        `/project/detail/${slug}`,
-        null,
-        {
-          Authorization: `Bearer ${token}`,
-        }
-      );
+      const response = await apiRequest("GET", `/project/detail/${slug}`, null, {
+        Authorization: `Bearer ${token}`,
+      });
       console.log(response);
       if (response.data?.status) {
-        setProjects(response.data.data);        
+        setProjects(response.data.data);
       } else {
         toast.error("Failed to fetch projects");
       }
@@ -53,25 +45,25 @@ const ProjectDetail = () => {
     }
   };
 
-
-
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files); // convert FileList to array
     setAttachments(files);
   };
+
   const handleProposalClick = () => {
     const token = localStorage.getItem("token");
     console.log(`token ${token}`);
     if (token) {
-      const modal = new bootstrap.Modal(document.getElementById('exampleModal'));
+      const modal = new bootstrap.Modal(document.getElementById("exampleModal"));
       modal.show();
     } else {
       localStorage.setItem("redirectAfterLogin", window.location.pathname);
       navigate("/login");
     }
   };
+
   const handleSubmit = async (e) => {
-    console.log('Calling HandleSubmit');
+    console.log("Calling HandleSubmit");
     e.preventDefault();
     setLoading(true);
     setButton(true);
@@ -88,14 +80,9 @@ const ProjectDetail = () => {
     }
 
     try {
-      const response = await apiRequest(
-        "POST",
-        `/apply/${projectId}`,
-        formData,
-        {
-          Authorization: `Bearer ${token}`,
-        }
-      );
+      const response = await apiRequest("POST", `/apply/${projectId}`, formData, {
+        Authorization: `Bearer ${token}`,
+      });
 
       if (response.data?.status) {
         toast.success(response.data.message || "Submitted successfully", {
@@ -109,7 +96,7 @@ const ProjectDetail = () => {
         const modalInstance = bootstrap.Modal.getInstance(modalEl);
         modalInstance?.hide();
       } else {
-        if(response.data?.message){
+        if (response.data?.message) {
           toast.error(response.data.message, {
             position: "top-right",
             autoClose: 3000,
@@ -132,14 +119,9 @@ const ProjectDetail = () => {
     const timeoutId = setTimeout(() => {
       const checkApplicationStatus = async () => {
         try {
-          const response = await apiRequest(
-            "GET",
-            `/applied/${slug}`,
-            null,
-            {
-              Authorization: `Bearer ${token}`,
-            }
-          );
+          const response = await apiRequest("GET", `/applied/${slug}`, null, {
+            Authorization: `Bearer ${token}`,
+          });
 
           if (response.data?.status && response.data?.applied) {
             setSubmitted(true); // Already applied
@@ -154,9 +136,18 @@ const ProjectDetail = () => {
     return () => clearTimeout(timeoutId); // Clear timeout if component unmounts
   }, [slug]);
 
+  // ✅ Fix: support different backend field names so Status actually shows
+  const projectStatus =
+    projects?.status ??
+    projects?.project_status ??
+    projects?.status_name ??
+    projects?.status_label ??
+    projects?.projectStatus ??
+    projects?.state;
+
   return (
     <>
-    <div className={`modal-loader ${button ? 'show' : 'hide'}`}></div>
+      <div className={`modal-loader ${button ? "show" : "hide"}`}></div>
       <section className="page-title style-two py-5">
         <div className="auto-container">
           <div className="row">
@@ -195,15 +186,18 @@ const ProjectDetail = () => {
           </div>
         </div>
       </section>
+
       <div className="container py-4">
         <div className="detail-page">
-          <h2>{projects.title ?? ''}</h2>
-          {projects.status && (
+          <h2>{projects.title ?? ""}</h2>
+
+          {projectStatus && (
             <div className="mb-2">
               <strong>Status:</strong>{" "}
-              <span className="badge badge-primary">{projects.status}</span>
+              <span className="badge badge-primary">{projectStatus}</span>
             </div>
           )}
+
           <div>
             {submit ? (
               submitted ? (
@@ -212,22 +206,21 @@ const ProjectDetail = () => {
                 </button>
               ) : (
                 <button
-                type="button"                
-                className="button-48"                
-                onClick={() => handleProposalClick()}
-              >
-                <span className="text">Submit Your Proposal</span>
-              </button>
-                          
+                  type="button"
+                  className="button-48"
+                  onClick={() => handleProposalClick()}
+                >
+                  <span className="text">Submit Your Proposal</span>
+                </button>
               )
             ) : (
               ""
             )}
           </div>
-          <h5>Budget : ${projects.budget ?? ''}</h5>
+
+          <h5>Budget : ${projects.budget ?? ""}</h5>
           <hr />
-          <h5>      {parse(projects.description || '')}
-          </h5>          
+          <h5>{parse(projects.description || "")}</h5>
         </div>
       </div>
 
@@ -241,13 +234,12 @@ const ProjectDetail = () => {
                 </button>
               ) : (
                 <button
-                type="button"                
-                className="button-48"                
-                onClick={() => handleProposalClick()}
-              >
-                <span className="text">Submit Your Proposal</span>
-              </button>
-                          
+                  type="button"
+                  className="button-48"
+                  onClick={() => handleProposalClick()}
+                >
+                  <span className="text">Submit Your Proposal</span>
+                </button>
               )
             ) : (
               ""
@@ -263,8 +255,8 @@ const ProjectDetail = () => {
         aria-labelledby="exampleModalLabel"
         aria-hidden="true"
       >
-              <div className="modal-dialog modal-lg">
-              <div className="modal-content">
+        <div className="modal-dialog modal-lg">
+          <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title" id="exampleModalLabel">
                 Project Proposal
@@ -350,7 +342,7 @@ const ProjectDetail = () => {
                   Close
                 </button>
                 <button type="submit" className="btn btn-primary">
-                {button ? 'Please wait...' : 'Submit'}
+                  {button ? "Please wait..." : "Submit"}
                 </button>
               </div>
             </form>
