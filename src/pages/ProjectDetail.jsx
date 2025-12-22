@@ -23,7 +23,7 @@ const ProjectDetail = () => {
   const [submit, setSubmit] = useState(false);
   const [button, setButton] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState({});
 
 
   useEffect(() => {
