@@ -198,6 +198,12 @@ const ProjectDetail = () => {
       <div className="container py-4">
         <div className="detail-page">
           <h2>{projects.title ?? ''}</h2>
+          {projects.status && (
+            <div className="mb-2">
+              <strong>Status:</strong>{" "}
+              <span className="badge badge-primary">{projects.status}</span>
+            </div>
+          )}
           <div>
             {submit ? (
               submitted ? (

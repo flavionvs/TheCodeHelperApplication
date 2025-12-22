@@ -391,6 +391,27 @@ const Shop = () => {
 
                           <ul className="job-other-info p-0 list-unstyled">
                             <li className="time">{project.category}</li>
+
+                            {project.status && (
+                              <li className="status">
+                                <span
+                                  className={
+                                    "badge " +
+                                    ((project.status || "").toLowerCase() === "pending"
+                                      ? "badge-primary"
+                                      : (project.status || "").toLowerCase() === "approved"
+                                      ? "badge-secondary"
+                                      : (project.status || "").toLowerCase() === "completed"
+                                      ? "badge-success"
+                                      : (project.status || "").toLowerCase() === "cancelled"
+                                      ? "badge-danger"
+                                      : "badge-tertiary")
+                                  }
+                                >
+                                  {project.status}
+                                </span>
+                              </li>
+                            )}
                           </ul>
 
                           <Link
