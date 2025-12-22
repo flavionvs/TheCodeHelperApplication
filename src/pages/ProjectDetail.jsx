@@ -34,7 +34,12 @@ const ProjectDetail = () => {
       });
       console.log(response);
       if (response.data?.status) {
-        setProjects(response.data.data);
+        // ✅ FIX: API returns `data: []` array, but this page expects a single project object
+        setProjects(
+          Array.isArray(response.data.data)
+            ? response.data.data[0] || {}
+            : response.data.data || {}
+        );
       } else {
         toast.error("Failed to fetch projects");
       }
@@ -136,15 +141,6 @@ const ProjectDetail = () => {
     return () => clearTimeout(timeoutId); // Clear timeout if component unmounts
   }, [slug]);
 
-  // ✅ Fix: support different backend field names so Status actually shows
-  const projectStatus =
-    projects?.status ??
-    projects?.project_status ??
-    projects?.status_name ??
-    projects?.status_label ??
-    projects?.projectStatus ??
-    projects?.state;
-
   return (
     <>
       <div className={`modal-loader ${button ? "show" : "hide"}`}></div>
@@ -191,10 +187,10 @@ const ProjectDetail = () => {
         <div className="detail-page">
           <h2>{projects.title ?? ""}</h2>
 
-          {projectStatus && (
+          {projects.status && (
             <div className="mb-2">
               <strong>Status:</strong>{" "}
-              <span className="badge badge-primary">{projectStatus}</span>
+              <span className="badge badge-primary">{projects.status}</span>
             </div>
           )}
 
@@ -324,9 +320,7 @@ const ProjectDetail = () => {
                     <label>Total Cost</label>
                     <p>
                       {hours && rate
-                        ? `$${(parseFloat(hours) * parseFloat(rate)).toFixed(
-                            2
-                          )}`
+                        ? `$${(parseFloat(hours) * parseFloat(rate)).toFixed(2)}`
                         : "-"}
                     </p>
                   </div>
