@@ -231,9 +231,7 @@ const ProjectList = () => {
 
           return <span className={className}>{label}</span>;
         },
-      }
-
-
+      },
       
 
       {
