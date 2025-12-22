@@ -400,6 +400,7 @@ const Shop = () => {
                             )}
                           </ul>
 
+
                           <Link
                             to={`/apply/${project.slug}?projectId=${project.id}`}
                             className="button-87 ms-0"
