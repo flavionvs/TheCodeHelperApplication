@@ -389,8 +389,6 @@ const Shop = () => {
                             <Link to={`/apply/${project.slug}`}>$ {project.budget}</Link>
                           </h5>
 
-                          <ul className="job-other-info p-0 list-unstyled">
-                            <li className="time">{project.category}</li>
 
                           <ul className="job-other-info p-0 list-unstyled">
                             <li className="time">{project.category}</li>
