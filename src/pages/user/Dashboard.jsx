@@ -90,7 +90,6 @@ const Dashboard = () => {
                 header: "Status",
                 cell: ({ row }) => {
                     let className = "badge badge-tertiary";
-                    let label = row.original.status;
 
                     const status = (row.original.status || "").toLowerCase();
 
@@ -104,8 +103,19 @@ const Dashboard = () => {
                         className = "badge badge-secondary";
                     }
 
-                    return label;
+                    const LABELS = {
+                        pending: "Pending",
+                        cancelled: "Cancelled",
+                        completed: "Completed",
+                        approved: "Approved",
+                        not_applied: "Not Applied",
+                    };
+
+                    const label = LABELS[status] ?? (row.original.status ?? "Pending");
+
+                    return <span className={className}>{label}</span>;
                 }
+
             },
         ],
         []
