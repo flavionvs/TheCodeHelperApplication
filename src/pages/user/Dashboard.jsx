@@ -92,13 +92,15 @@ const Dashboard = () => {
                     let className = "badge badge-tertiary";
                     let label = row.original.status;
 
-                    if (row.original.status === "Pending") {
+                    const status = (row.original.status || "").toLowerCase();
+
+                    if (status === "pending") {
                         className = "badge badge-primary";
-                    } else if (row.original.status === "Cancelled") {
+                    } else if (status === "cancelled") {
                         className = "badge badge-danger";
-                    } else if (row.original.status === "Completed") {
+                    } else if (status === "completed") {
                         className = "badge badge-success";
-                    } else if (row.original.status === "Approved") {
+                    } else if (status === "approved") {
                         className = "badge badge-secondary";
                     }
 
