@@ -23,6 +23,9 @@ const Application = () => {
   // ✅ store selected application row (avoid state timing issues)
   const [selectedApp, setSelectedApp] = useState(null);
 
+  // ✅ NEW: store selected application id (extra safety) + persist in localStorage
+  const [selectedAppId, setSelectedAppId] = useState(0);
+
   const [projectAmount, setProjectAmount] = useState({});
   const [loading, setLoading] = useState(true);
   const [button, setButton] = useState(false);
@@ -32,6 +35,8 @@ const Application = () => {
   const [total, setTotal] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const token = localStorage.getItem("token");
+
+  const [projects, setProjects] = useState([]);
 
   useEffect(() => {
     fetchProjects(page);
@@ -65,8 +70,6 @@ const Application = () => {
       setLoading(false);
     }
   };
-
-  const [projects, setProjects] = useState([]);
 
   const columns = useMemo(
     () => [
@@ -155,18 +158,25 @@ const Application = () => {
               name: "Approve",
               type: "pay",
               onClick: () => {
-                // ✅ store the full application row (not only id)
-                setSelectedApp(row.original);
+                const app = row.original;
+                const id = Number(app?.id || 0);
+
+                // ✅ store id FIRST + persist (prevents missing id on submit)
+                setSelectedAppId(id);
+                localStorage.setItem("selected_application_id", String(id));
+
+                // ✅ optional: store full row for UI
+                setSelectedApp(app);
 
                 // ✅ use reliable fields (prefer total_amount)
                 setProjectAmount({
-                  amount: row.original.amount ?? row.original.total_amount ?? 0,
-                  admin_commission: row.original.admin_commission,
-                  admin_amount: row.original.admin_amount,
-                  stripe_commission: row.original.stripe_commission,
-                  stripe_amount: row.original.stripe_amount,
-                  stripe_fee: row.original.stripe_fee,
-                  total_amount: row.original.total_amount ?? row.original.amount ?? 0,
+                  amount: app.amount ?? app.total_amount ?? 0,
+                  admin_commission: app.admin_commission,
+                  admin_amount: app.admin_amount,
+                  stripe_commission: app.stripe_commission,
+                  stripe_amount: app.stripe_amount,
+                  stripe_fee: app.stripe_fee,
+                  total_amount: app.total_amount ?? app.amount ?? 0,
                 });
 
                 setTimeout(() => {
@@ -212,9 +222,14 @@ const Application = () => {
       return;
     }
 
-    // ✅ hard guard: must have selected application id
-    if (!selectedApp?.id) {
-      toast.error("Application ID missing. Please select a proposal again.");
+    // ✅ NEW: robust fallback chain for application id
+    const appId =
+      Number(selectedApp?.id || 0) ||
+      Number(selectedAppId || 0) ||
+      Number(localStorage.getItem("selected_application_id") || 0);
+
+    if (!appId) {
+      toast.error("Application ID missing. Please click Approve again.");
       setButton(false);
       return;
     }
@@ -234,15 +249,12 @@ const Application = () => {
     }
 
     try {
-      console.log("PAYMENT DEBUG", {
-        applicationId: selectedApp.id,
-        projectAmount,
-      });
+      console.log("PAYMENT DEBUG appId =", appId);
 
       // ✅ backend will calculate amount from Application (recommended)
       const updatedData = {
         paymentMethod: paymentMethod.id,
-        applicationId: selectedApp.id,
+        applicationId: appId,
       };
 
       const response = await apiRequest("POST", "/payment", updatedData, {
@@ -255,7 +267,7 @@ const Application = () => {
         const paymentIntent = response.data.paymentIntent;
 
         const applicationData = {
-          applicationId: selectedApp.id,
+          applicationId: appId,
           amount: paymentIntent.amount,
           paymentIntentId: paymentIntent.id,
           paymentStatus: paymentIntent.status,
@@ -306,7 +318,10 @@ const Application = () => {
             autoClose: 3000,
           });
         } else {
-          toast.error("Payment failed.", { position: "top-right", autoClose: 3000 });
+          toast.error("Payment failed.", {
+            position: "top-right",
+            autoClose: 3000,
+          });
         }
       }
     } catch (err) {
