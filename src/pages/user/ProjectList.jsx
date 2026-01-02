@@ -6,7 +6,6 @@ import { apiRequest } from "../../utils/api";
 import Table from "../../ui/Table";
 import ActionButton from "../../ui/ActionButton";
 import { useLoader } from "../../ui/LoaderContext";
-import * as bootstrap from "bootstrap";
 
 const ProjectList = () => {
   const user_id = JSON.parse(localStorage.getItem("user_id"));
@@ -42,6 +41,57 @@ const ProjectList = () => {
     accept_completion_request: role === "Client" && type == "ongoing",
   };
 
+  // --- Modal helpers (NO bootstrap JS dependency) ---
+  const openRemarkModal = useCallback(() => {
+    const el = document.getElementById("viewDescriptionModal");
+    if (!el) return;
+
+    // Show modal
+    el.classList.add("show");
+    el.style.display = "block";
+    el.removeAttribute("aria-hidden");
+    el.setAttribute("aria-modal", "true");
+
+    // Body state
+    document.body.classList.add("modal-open");
+
+    // Backdrop
+    let backdrop = document.getElementById("viewDescriptionBackdrop");
+    if (!backdrop) {
+      backdrop = document.createElement("div");
+      backdrop.className = "modal-backdrop fade show";
+      backdrop.id = "viewDescriptionBackdrop";
+      document.body.appendChild(backdrop);
+
+      // Click backdrop to close
+      backdrop.addEventListener("click", closeRemarkModal);
+    }
+  }, []);
+
+  const closeRemarkModal = useCallback(() => {
+    const el = document.getElementById("viewDescriptionModal");
+    if (el) {
+      el.classList.remove("show");
+      el.style.display = "none";
+      el.setAttribute("aria-hidden", "true");
+      el.removeAttribute("aria-modal");
+    }
+
+    document.body.classList.remove("modal-open");
+
+    const backdrop = document.getElementById("viewDescriptionBackdrop");
+    if (backdrop) backdrop.remove();
+  }, []);
+
+  // Close modal on ESC key
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") closeRemarkModal();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [closeRemarkModal]);
+
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       setDebouncedSearch(search);
@@ -76,8 +126,6 @@ const ProjectList = () => {
         }
       } catch (error) {
         toast.error("Error loading projects");
-        // optional: console for debugging
-        // console.error(error);
       } finally {
         setLoading(false);
         hideLoader();
@@ -209,11 +257,8 @@ const ProjectList = () => {
               onClick={() => {
                 setDesc(remark);
                 setTimeout(() => {
-                  const modalEl = document.getElementById("viewDescriptionModal");
-                  if (!modalEl) return;
-                  const modal = new bootstrap.Modal(modalEl);
-                  modal.show();
-                }, 100);
+                  openRemarkModal();
+                }, 50);
               }}
             >
               View Remark
@@ -230,7 +275,10 @@ const ProjectList = () => {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => {
-          const raw = (row.original.status ?? "").toString().trim().toLowerCase();
+          const raw = (row.original.status ?? "")
+            .toString()
+            .trim()
+            .toLowerCase();
           const status = raw === "canceled" ? "cancelled" : raw;
 
           const STATUS_META = {
@@ -242,7 +290,10 @@ const ProjectList = () => {
 
             // extra common statuses (safe defaults)
             in_progress: { label: "In Progress", className: "badge bg-info" },
-            on_hold: { label: "On Hold", className: "badge bg-warning text-dark" },
+            on_hold: {
+              label: "On Hold",
+              className: "badge bg-warning text-dark",
+            },
             rejected: { label: "Rejected", className: "badge bg-danger" },
             draft: { label: "Draft", className: "badge bg-dark" },
           };
@@ -324,14 +375,17 @@ const ProjectList = () => {
         ),
       },
     ],
-    [from, handleDeleteSuccess]
+    [from, handleDeleteSuccess, openRemarkModal]
   );
 
   return (
     <section className="user-dashboard">
       <div className="dashboard-outer">
         <div className="upper-title-box">
-          <h3>{type ? type.charAt(0).toUpperCase() + type.slice(1) : "All"} Project List</h3>
+          <h3>
+            {type ? type.charAt(0).toUpperCase() + type.slice(1) : "All"} Project
+            List
+          </h3>
           <div className="text">Manage your projects easily.</div>
         </div>
 
@@ -382,6 +436,7 @@ const ProjectList = () => {
         tabIndex="-1"
         aria-labelledby="viewDescriptionModalLabel"
         aria-hidden="true"
+        style={{ display: "none" }}
       >
         <div className="modal-dialog">
           <div className="modal-content">
@@ -392,13 +447,19 @@ const ProjectList = () => {
               <button
                 type="button"
                 className="btn-close"
-                data-bs-dismiss="modal"
                 aria-label="Close"
+                onClick={closeRemarkModal}
               ></button>
             </div>
 
             <div className="modal-body">
               <p>{desc}</p>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={closeRemarkModal}>
+                Close
+              </button>
             </div>
           </div>
         </div>
