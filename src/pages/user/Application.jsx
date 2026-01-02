@@ -23,7 +23,7 @@ const Application = () => {
   // ✅ store selected application row (avoid state timing issues)
   const [selectedApp, setSelectedApp] = useState(null);
 
-  // ✅ NEW: store selected application id (extra safety) + persist in localStorage
+  // ✅ store selected application id (MUST be applications.my_row_id now)
   const [selectedAppId, setSelectedAppId] = useState(0);
 
   const [projectAmount, setProjectAmount] = useState({});
@@ -37,6 +37,15 @@ const Application = () => {
   const token = localStorage.getItem("token");
 
   const [projects, setProjects] = useState([]);
+
+  // ✅ helper: accept only positive ints (blocks "0" + null + undefined)
+  const toPositiveInt = (v) => {
+    const n = Number(v);
+    return Number.isInteger(n) && n > 0 ? n : 0;
+  };
+
+  // ✅ helper: correct Application identifier is my_row_id (NOT id)
+  const getAppPk = (app) => toPositiveInt(app?.my_row_id);
 
   useEffect(() => {
     fetchProjects(page);
@@ -137,35 +146,45 @@ const Application = () => {
         accessorKey: "actions",
         header: "Actions",
         cell: ({ row }) => {
+          const app = row.original;
+
+          // ✅ IMPORTANT: application primary key is my_row_id (backend must include it in API response)
+          const appPk = getAppPk(app);
+
           const buttons = [
             {
-              id: row.original.id,
+              id: appPk || app?.id, // just for ActionButton internal key
               name: "View&nbsp;Details",
-              url: `/view-profile/${row.original.user_id}`,
+              url: `/view-profile/${app.user_id}`,
             },
-            row.original.status != "Pending" &&
-              row.original.status != "Cancelled" && {
-                id: row.original.id,
+            app.status != "Pending" &&
+              app.status != "Cancelled" && {
+                id: appPk || app?.id,
                 name: "Chat",
                 type: "pay",
                 onClick: () => {
-                  const chatUserId = row.original.user_id;
+                  const chatUserId = app.user_id;
                   navigate(`/user/chat?user_id=${chatUserId}`);
                 },
               },
-            row.original.status == "Pending" && {
-              id: row.original.id,
+            app.status == "Pending" && {
+              id: appPk || app?.id,
               name: "Approve",
               type: "pay",
               onClick: () => {
-                const app = row.original;
-                const id = Number(app?.id || 0);
+                // ✅ HARD BLOCK if API did not return my_row_id
+                if (!appPk) {
+                  toast.error(
+                    "Application ID missing (my_row_id). Please refresh. If it persists, backend must include my_row_id."
+                  );
+                  return;
+                }
 
                 // ✅ store id FIRST + persist (prevents missing id on submit)
-                setSelectedAppId(id);
-                localStorage.setItem("selected_application_id", String(id));
+                setSelectedAppId(appPk);
+                localStorage.setItem("selected_application_id", String(appPk));
 
-                // ✅ optional: store full row for UI
+                // ✅ store full row for UI
                 setSelectedApp(app);
 
                 // ✅ use reliable fields (prefer total_amount)
@@ -187,18 +206,20 @@ const Application = () => {
                 }, 100);
               },
             },
-            row.original.status !== "Pending" &&
-              row.original.status !== "Cancelled" &&
-              row.original.status !== "Completed" && {
-                id: row.original.id,
+            app.status !== "Pending" &&
+              app.status !== "Cancelled" &&
+              app.status !== "Completed" && {
+                id: appPk || app?.id,
                 name: "Cancel",
-                url: `/application/cancel/${row.original.id}`,
+                // NOTE: if cancel endpoint expects legacy id, this may need backend alignment too.
+                // Keeping as original for now to avoid breaking. If cancel fails, update backend to accept my_row_id.
+                url: `/application/cancel/${app.id}`,
               },
           ];
 
           return (
             <ActionButton
-              id={row.original.id}
+              id={appPk || app?.id}
               buttons={buttons}
               onDeleteSuccess={() => {}}
             />
@@ -222,11 +243,11 @@ const Application = () => {
       return;
     }
 
-    // ✅ NEW: robust fallback chain for application id
+    // ✅ CRITICAL: use my_row_id everywhere, and NEVER accept 0
     const appId =
-      Number(selectedApp?.id || 0) ||
-      Number(selectedAppId || 0) ||
-      Number(localStorage.getItem("selected_application_id") || 0);
+      toPositiveInt(selectedApp?.my_row_id) ||
+      toPositiveInt(selectedAppId) ||
+      toPositiveInt(localStorage.getItem("selected_application_id"));
 
     if (!appId) {
       toast.error("Application ID missing. Please click Approve again.");
@@ -251,10 +272,10 @@ const Application = () => {
     try {
       console.log("PAYMENT DEBUG appId =", appId);
 
-      // ✅ backend will calculate amount from Application (recommended)
+      // ✅ backend calculates amount from Application (recommended)
       const updatedData = {
         paymentMethod: paymentMethod.id,
-        applicationId: appId,
+        applicationId: appId, // ✅ this is my_row_id now
       };
 
       const response = await apiRequest("POST", "/payment", updatedData, {
@@ -264,10 +285,12 @@ const Application = () => {
       console.log("Payment response:", response);
 
       if (response.data?.status) {
+        // ✅ Webhook should finalize DB status.
+        // This legacy endpoint may be removed later, but keeping it for compatibility if your flow relies on it.
         const paymentIntent = response.data.paymentIntent;
 
         const applicationData = {
-          applicationId: appId,
+          applicationId: appId, // ✅ my_row_id
           amount: paymentIntent.amount,
           paymentIntentId: paymentIntent.id,
           paymentStatus: paymentIntent.status,
