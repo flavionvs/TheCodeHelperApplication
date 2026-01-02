@@ -1,11 +1,12 @@
 // ProjectList.js
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { apiRequest } from "../../utils/api";
 import Table from "../../ui/Table";
 import ActionButton from "../../ui/ActionButton";
 import { useLoader } from "../../ui/LoaderContext";
+import * as bootstrap from "bootstrap";
 
 const ProjectList = () => {
   const user_id = JSON.parse(localStorage.getItem("user_id"));
@@ -28,20 +29,18 @@ const ProjectList = () => {
   const searchParams = new URLSearchParams(location.search);
   const type = searchParams.get("type");
 
+  const role = user?.role || "";
+
   const columnVisibility = {
     actions: type == "my-projects",
-    application: user.role === "Client",
-    status: user.role === "Client",
-    mark_complete: user.role === "Freelancer" && type == "ongoing",
+    application: role === "Client",
+    status: role === "Client",
+    mark_complete: role === "Freelancer" && type == "ongoing",
     completed_on: type == "completed",
     cancelled_at: type == "cancelled",
     completion_request: type == "ongoing",
-    accept_completion_request: user.role === "Client" && type == "ongoing",
+    accept_completion_request: role === "Client" && type == "ongoing",
   };
-
-  useEffect(() => {
-    fetchProjects(page);
-  }, [page, type]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -50,43 +49,59 @@ const ProjectList = () => {
     return () => clearTimeout(delayDebounce);
   }, [search]);
 
+  const fetchProjects = useCallback(
+    async (currentPage) => {
+      showLoader();
+      try {
+        const response = await apiRequest(
+          "GET",
+          `/projects?page=${currentPage}&type=${type}&search=${encodeURIComponent(
+            debouncedSearch || ""
+          )}`,
+          null,
+          {
+            Authorization: `Bearer ${token}`,
+          }
+        );
+
+        if (response.data?.status) {
+          setProjects(response.data.data || []);
+          setPage(response.data.page?.current_page ?? currentPage);
+          setFrom(response.data.page?.from ?? 1);
+          setTo(response.data.page?.to ?? 1);
+          setTotal(response.data.page?.total ?? 0);
+          setLastPage(response.data.page?.last_page ?? 1);
+        } else {
+          toast.error("Failed to fetch projects");
+        }
+      } catch (error) {
+        toast.error("Error loading projects");
+        // optional: console for debugging
+        // console.error(error);
+      } finally {
+        setLoading(false);
+        hideLoader();
+      }
+    },
+    [showLoader, hideLoader, token, type, debouncedSearch]
+  );
+
   useEffect(() => {
+    setLoading(true);
     fetchProjects(page);
+  }, [page, type, fetchProjects]);
+
+  // When debounced search changes, go back to page 1 and refetch
+  useEffect(() => {
+    setLoading(true);
+    setPage(1);
+    fetchProjects(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
-  const fetchProjects = async (currentPage) => {
-    showLoader();
-    try {
-      const response = await apiRequest(
-        "GET",
-        `/projects?page=${currentPage}&type=${type}&search=${search}`,
-        null,
-        {
-          Authorization: `Bearer ${token}`,
-        }
-      );
-
-      if (response.data?.status) {
-        setProjects(response.data.data);
-        setPage(response.data.page.current_page);
-        setFrom(response.data.page.from);
-        setTo(response.data.page.to);
-        setTotal(response.data.page.total);
-        setLastPage(response.data.page.last_page);
-      } else {
-        toast.error("Failed to fetch projects");
-      }
-    } catch (error) {
-      toast.error("Error loading projects", error);
-    } finally {
-      setLoading(false);
-      hideLoader();
-    }
-  };
-
-  const handleDeleteSuccess = () => {
+  const handleDeleteSuccess = useCallback(() => {
     fetchProjects(page);
-  };
+  }, [fetchProjects, page]);
 
   const columns = useMemo(
     () => [
@@ -124,23 +139,29 @@ const ProjectList = () => {
       },
 
       { accessorKey: "created_at", header: "Creation Date" },
+
       {
         accessorKey: "chat",
         header: "Chat",
         cell: ({ row }) => {
-          const chatUserId = row.original.approved_freelancer_id; 
+          const chatUserId = row.original.approved_freelancer_id;
+          const st = (row.original.status ?? "")
+            .toString()
+            .trim()
+            .toLowerCase();
+
           return (
             <div>
-            {row.original.status === "Approved" && (
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() =>
-                (window.location.href = `/codehelper/web/user/chat?user_id=${chatUserId}`)
-              }
-            >
-              Chat
-            </button>
-            )}
+              {st === "approved" && (
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() =>
+                    (window.location.href = `/codehelper/web/user/chat?user_id=${chatUserId}`)
+                  }
+                >
+                  Chat
+                </button>
+              )}
             </div>
           );
         },
@@ -159,9 +180,7 @@ const ProjectList = () => {
           }
 
           return (
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "4px" }}
-            >
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               {attachments.map((url, index) => (
                 <a
                   key={index}
@@ -190,9 +209,9 @@ const ProjectList = () => {
               onClick={() => {
                 setDesc(remark);
                 setTimeout(() => {
-                  const modal = new bootstrap.Modal(
-                    document.getElementById("viewDescriptionModal")
-                  );
+                  const modalEl = document.getElementById("viewDescriptionModal");
+                  if (!modalEl) return;
+                  const modal = new bootstrap.Modal(modalEl);
                   modal.show();
                 }, 100);
               }}
@@ -211,28 +230,31 @@ const ProjectList = () => {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => {
-          const status = (row.original.status || "").toLowerCase();
+          const raw = (row.original.status ?? "").toString().trim().toLowerCase();
+          const status = raw === "canceled" ? "cancelled" : raw;
 
-          let className = "badge badge-tertiary";
-          if (status === "pending") className = "badge badge-primary";
-          else if (status === "cancelled") className = "badge badge-danger";
-          else if (status === "completed") className = "badge badge-success";
-          else if (status === "approved") className = "badge badge-secondary";
+          const STATUS_META = {
+            pending: { label: "Pending", className: "badge bg-primary" },
+            approved: { label: "Approved", className: "badge bg-secondary" },
+            completed: { label: "Completed", className: "badge bg-success" },
+            cancelled: { label: "Cancelled", className: "badge bg-danger" },
+            not_applied: { label: "Not Applied", className: "badge bg-dark" },
 
-          const LABELS = {
-            pending: "Pending",
-            approved: "Approved",
-            completed: "Completed",
-            cancelled: "Cancelled",
-            not_applied: "Not Applied",
+            // extra common statuses (safe defaults)
+            in_progress: { label: "In Progress", className: "badge bg-info" },
+            on_hold: { label: "On Hold", className: "badge bg-warning text-dark" },
+            rejected: { label: "Rejected", className: "badge bg-danger" },
+            draft: { label: "Draft", className: "badge bg-dark" },
           };
 
-          const label = LABELS[status] ?? (row.original.status ?? "");
+          const meta = STATUS_META[status] || {
+            label: row.original.status ?? "",
+            className: "badge bg-dark",
+          };
 
-          return <span className={className}>{label}</span>;
+          return <span className={meta.className}>{meta.label}</span>;
         },
       },
-      
 
       {
         accessorKey: "accept_completion_request",
@@ -302,14 +324,14 @@ const ProjectList = () => {
         ),
       },
     ],
-    []
+    [from, handleDeleteSuccess]
   );
 
   return (
     <section className="user-dashboard">
       <div className="dashboard-outer">
         <div className="upper-title-box">
-          <h3>{type.charAt(0).toUpperCase() + type.slice(1)} Project List</h3>
+          <h3>{type ? type.charAt(0).toUpperCase() + type.slice(1) : "All"} Project List</h3>
           <div className="text">Manage your projects easily.</div>
         </div>
 
@@ -317,7 +339,7 @@ const ProjectList = () => {
           <div className="col-lg-12">
             <div className="ls-widget">
               <div className="widget-title d-flex">
-                {user.role == "Client" ? (
+                {role == "Client" ? (
                   <Link to="/user/project/create" className="btn btn-primary">
                     + Add New Project
                   </Link>
