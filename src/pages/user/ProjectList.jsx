@@ -1,5 +1,5 @@
 // ProjectList.js
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { apiRequest } from "../../utils/api";
@@ -28,69 +28,21 @@ const ProjectList = () => {
   const searchParams = new URLSearchParams(location.search);
   const type = searchParams.get("type");
 
-  const role = user?.role || "";
-
   const columnVisibility = {
     actions: type == "my-projects",
-    application: role === "Client",
-    status: role === "Client",
-    mark_complete: role === "Freelancer" && type == "ongoing",
+    application: user.role === "Client",
+    status: user.role === "Client",
+    mark_complete: user.role === "Freelancer" && type == "ongoing",
     completed_on: type == "completed",
     cancelled_at: type == "cancelled",
     completion_request: type == "ongoing",
-    accept_completion_request: role === "Client" && type == "ongoing",
+    accept_completion_request: user.role === "Client" && type == "ongoing",
   };
 
-  // --- Modal helpers (NO bootstrap JS dependency) ---
-  const openRemarkModal = useCallback(() => {
-    const el = document.getElementById("viewDescriptionModal");
-    if (!el) return;
-
-    // Show modal
-    el.classList.add("show");
-    el.style.display = "block";
-    el.removeAttribute("aria-hidden");
-    el.setAttribute("aria-modal", "true");
-
-    // Body state
-    document.body.classList.add("modal-open");
-
-    // Backdrop
-    let backdrop = document.getElementById("viewDescriptionBackdrop");
-    if (!backdrop) {
-      backdrop = document.createElement("div");
-      backdrop.className = "modal-backdrop fade show";
-      backdrop.id = "viewDescriptionBackdrop";
-      document.body.appendChild(backdrop);
-
-      // Click backdrop to close
-      backdrop.addEventListener("click", closeRemarkModal);
-    }
-  }, []);
-
-  const closeRemarkModal = useCallback(() => {
-    const el = document.getElementById("viewDescriptionModal");
-    if (el) {
-      el.classList.remove("show");
-      el.style.display = "none";
-      el.setAttribute("aria-hidden", "true");
-      el.removeAttribute("aria-modal");
-    }
-
-    document.body.classList.remove("modal-open");
-
-    const backdrop = document.getElementById("viewDescriptionBackdrop");
-    if (backdrop) backdrop.remove();
-  }, []);
-
-  // Close modal on ESC key
   useEffect(() => {
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") closeRemarkModal();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [closeRemarkModal]);
+    fetchProjects(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, type]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -99,57 +51,44 @@ const ProjectList = () => {
     return () => clearTimeout(delayDebounce);
   }, [search]);
 
-  const fetchProjects = useCallback(
-    async (currentPage) => {
-      showLoader();
-      try {
-        const response = await apiRequest(
-          "GET",
-          `/projects?page=${currentPage}&type=${type}&search=${encodeURIComponent(
-            debouncedSearch || ""
-          )}`,
-          null,
-          {
-            Authorization: `Bearer ${token}`,
-          }
-        );
-
-        if (response.data?.status) {
-          setProjects(response.data.data || []);
-          setPage(response.data.page?.current_page ?? currentPage);
-          setFrom(response.data.page?.from ?? 1);
-          setTo(response.data.page?.to ?? 1);
-          setTotal(response.data.page?.total ?? 0);
-          setLastPage(response.data.page?.last_page ?? 1);
-        } else {
-          toast.error("Failed to fetch projects");
-        }
-      } catch (error) {
-        toast.error("Error loading projects");
-      } finally {
-        setLoading(false);
-        hideLoader();
-      }
-    },
-    [showLoader, hideLoader, token, type, debouncedSearch]
-  );
-
   useEffect(() => {
-    setLoading(true);
     fetchProjects(page);
-  }, [page, type, fetchProjects]);
-
-  // When debounced search changes, go back to page 1 and refetch
-  useEffect(() => {
-    setLoading(true);
-    setPage(1);
-    fetchProjects(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
-  const handleDeleteSuccess = useCallback(() => {
+  const fetchProjects = async (currentPage) => {
+    showLoader();
+    try {
+      const response = await apiRequest(
+        "GET",
+        `/projects?page=${currentPage}&type=${type}&search=${search}`,
+        null,
+        {
+          Authorization: `Bearer ${token}`,
+        }
+      );
+
+      if (response.data?.status) {
+        setProjects(response.data.data);
+        setPage(response.data.page.current_page);
+        setFrom(response.data.page.from);
+        setTo(response.data.page.to);
+        setTotal(response.data.page.total);
+        setLastPage(response.data.page.last_page);
+      } else {
+        toast.error("Failed to fetch projects");
+      }
+    } catch (error) {
+      toast.error("Error loading projects");
+    } finally {
+      setLoading(false);
+      hideLoader();
+    }
+  };
+
+  const handleDeleteSuccess = () => {
     fetchProjects(page);
-  }, [fetchProjects, page]);
+  };
 
   const columns = useMemo(
     () => [
@@ -193,14 +132,10 @@ const ProjectList = () => {
         header: "Chat",
         cell: ({ row }) => {
           const chatUserId = row.original.approved_freelancer_id;
-          const st = (row.original.status ?? "")
-            .toString()
-            .trim()
-            .toLowerCase();
 
           return (
             <div>
-              {st === "approved" && (
+              {row.original.status === "Approved" && (
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={() =>
@@ -257,8 +192,16 @@ const ProjectList = () => {
               onClick={() => {
                 setDesc(remark);
                 setTimeout(() => {
-                  openRemarkModal();
-                }, 50);
+                  const el = document.getElementById("viewDescriptionModal");
+                  const bs = window.bootstrap; // ✅ global bootstrap (no import)
+                  if (bs?.Modal && el) {
+                    const modal = new bs.Modal(el);
+                    modal.show();
+                  } else {
+                    // fallback: at least show the text if bootstrap isn't loaded
+                    alert(remark);
+                  }
+                }, 100);
               }}
             >
               View Remark
@@ -271,14 +214,12 @@ const ProjectList = () => {
 
       { accessorKey: "cancelled_at", header: "Cancelled At" },
 
+      // ✅ FIX: status badge using Bootstrap bg-* classes (no transparency)
       {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => {
-          const raw = (row.original.status ?? "")
-            .toString()
-            .trim()
-            .toLowerCase();
+          const raw = (row.original.status ?? "").toString().trim().toLowerCase();
           const status = raw === "canceled" ? "cancelled" : raw;
 
           const STATUS_META = {
@@ -288,12 +229,8 @@ const ProjectList = () => {
             cancelled: { label: "Cancelled", className: "badge bg-danger" },
             not_applied: { label: "Not Applied", className: "badge bg-dark" },
 
-            // extra common statuses (safe defaults)
             in_progress: { label: "In Progress", className: "badge bg-info" },
-            on_hold: {
-              label: "On Hold",
-              className: "badge bg-warning text-dark",
-            },
+            on_hold: { label: "On Hold", className: "badge bg-warning text-dark" },
             rejected: { label: "Rejected", className: "badge bg-danger" },
             draft: { label: "Draft", className: "badge bg-dark" },
           };
@@ -375,17 +312,16 @@ const ProjectList = () => {
         ),
       },
     ],
-    [from, handleDeleteSuccess, openRemarkModal]
+    // keep same dependency behavior as your original (it was [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   return (
     <section className="user-dashboard">
       <div className="dashboard-outer">
         <div className="upper-title-box">
-          <h3>
-            {type ? type.charAt(0).toUpperCase() + type.slice(1) : "All"} Project
-            List
-          </h3>
+          <h3>{type.charAt(0).toUpperCase() + type.slice(1)} Project List</h3>
           <div className="text">Manage your projects easily.</div>
         </div>
 
@@ -393,7 +329,7 @@ const ProjectList = () => {
           <div className="col-lg-12">
             <div className="ls-widget">
               <div className="widget-title d-flex">
-                {role == "Client" ? (
+                {user.role == "Client" ? (
                   <Link to="/user/project/create" className="btn btn-primary">
                     + Add New Project
                   </Link>
@@ -436,7 +372,6 @@ const ProjectList = () => {
         tabIndex="-1"
         aria-labelledby="viewDescriptionModalLabel"
         aria-hidden="true"
-        style={{ display: "none" }}
       >
         <div className="modal-dialog">
           <div className="modal-content">
@@ -447,19 +382,13 @@ const ProjectList = () => {
               <button
                 type="button"
                 className="btn-close"
+                data-bs-dismiss="modal"
                 aria-label="Close"
-                onClick={closeRemarkModal}
               ></button>
             </div>
 
             <div className="modal-body">
               <p>{desc}</p>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={closeRemarkModal}>
-                Close
-              </button>
             </div>
           </div>
         </div>
