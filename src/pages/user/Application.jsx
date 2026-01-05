@@ -284,17 +284,131 @@ const Application = () => {
 
       console.log("Payment response:", response);
 
-      if (response.data?.status) {
-        // ✅ Webhook should finalize DB status.
-        // This legacy endpoint may be removed later, but keeping it for compatibility if your flow relies on it.
-        const paymentIntent = response.data.paymentIntent;
+      // ✅ NEW: Support Stripe 3DS / requires_action flows
+      // Backend may return:
+      // - { status:true, paymentIntent:{...} }  (immediate success)
+      // - { requires_action:true, payment_intent_client_secret:"...", payment_intent_id:"..." }
+      // - or other shapes depending on implementation
+      let paymentIntent = response.data?.paymentIntent || null;
 
+      // If backend indicates further action is required, confirm with Stripe using the client secret
+      const requiresAction =
+        response.data?.requires_action === true ||
+        response.data?.requiresAction === true ||
+        false;
+
+      const clientSecret =
+        response.data?.payment_intent_client_secret ||
+        response.data?.client_secret ||
+        response.data?.clientSecret ||
+        null;
+
+      if ((requiresAction || clientSecret) && stripe) {
+        if (!clientSecret) {
+          toast.error(
+            "Payment requires additional authentication, but client secret was not provided."
+          );
+          setButton(false);
+          return;
+        }
+
+        const confirmResult = await stripe.confirmCardPayment(clientSecret);
+
+        if (confirmResult?.error) {
+          const msg =
+            confirmResult.error.message || "Authentication failed. Please try again.";
+          setError(msg);
+          setSuccess(false);
+          toast.error(msg, { position: "top-right", autoClose: 3000 });
+          setButton(false);
+          return;
+        }
+
+        paymentIntent = confirmResult?.paymentIntent || paymentIntent;
+
+        if (!paymentIntent || paymentIntent.status !== "succeeded") {
+          const msg =
+            paymentIntent?.status
+              ? `Payment not completed (status: ${paymentIntent.status}).`
+              : "Payment not completed. Please try again.";
+          setError(msg);
+          setSuccess(false);
+          toast.error(msg, { position: "top-right", autoClose: 3000 });
+          setButton(false);
+          return;
+        }
+      }
+
+      // ✅ NEW: If paymentIntent succeeded (either immediately OR after 3DS), finalize in backend
+      if (paymentIntent && paymentIntent.status === "succeeded") {
         const applicationData = {
           applicationId: appId, // ✅ my_row_id
+          // Stripe amount is in cents; backend should handle conversion safely (it already does in your latest backend)
           amount: paymentIntent.amount,
           paymentIntentId: paymentIntent.id,
           paymentStatus: paymentIntent.status,
           paymentDetails: paymentIntent,
+        };
+
+        console.log("Finalize application data:", applicationData);
+
+        const res = await apiRequest(
+          "POST",
+          "/update-application-status",
+          applicationData,
+          {
+            Authorization: `Bearer ${token}`,
+          }
+        );
+
+        console.log("Update response:", res);
+
+        if (res.data?.status) {
+          const modalElement = document.getElementById("exampleModal");
+          const modalInstance = bootstrap.Modal.getInstance(modalElement);
+          modalInstance?.hide();
+
+          toast.success("Payment Successful!", {
+            position: "top-right",
+            autoClose: 3000,
+          });
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+
+          setSuccess(true);
+          setError(null);
+        } else {
+          setSuccess(false);
+          setError(res.data?.message);
+          toast.error(res.data?.message || "Failed to update application status", {
+            position: "top-right",
+            autoClose: 3000,
+          });
+        }
+
+        return;
+      }
+
+      // ✅ Existing behavior: if backend returned {status:true} but no paymentIntent, try to keep legacy behavior
+      if (response.data?.status) {
+        // Some backends may still return paymentIntent on status:true; if missing, this is unexpected.
+        const pi = response.data?.paymentIntent;
+        if (!pi) {
+          toast.error(
+            "Payment succeeded response was missing payment details. Please check backend /payment response."
+          );
+          setButton(false);
+          return;
+        }
+
+        const applicationData = {
+          applicationId: appId, // ✅ my_row_id
+          amount: pi.amount,
+          paymentIntentId: pi.id,
+          paymentStatus: pi.status,
+          paymentDetails: pi,
         };
 
         console.log("Application data:", applicationData);

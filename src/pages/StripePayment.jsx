@@ -91,7 +91,10 @@ const StripePayment = () => {
         response?.data?.paymentIntent?.client_secret;
 
       if (!clientSecret) {
-        const msg = response?.data?.message || response?.data?.error || "Payment setup failed.";
+        const msg =
+          response?.data?.message ||
+          response?.data?.error ||
+          "Payment setup failed.";
         setError(msg);
         toast.error(msg);
         setLoading(false);
@@ -109,8 +112,43 @@ const StripePayment = () => {
         setError(confirmError.message);
         setSuccess(false);
         toast.error(confirmError.message);
-      } else if (paymentIntent?.status === "succeeded") {
-        toast.success("Payment Successful!", { position: "top-right", autoClose: 3000 });
+        setLoading(false);
+        return;
+      }
+
+      if (paymentIntent?.status === "succeeded") {
+        // ✅ NEW: finalize in backend so project/payment/status updates even if webhook isn't working
+        const finalizePayload = {
+          applicationId: applicationId,
+          amount: paymentIntent.amount,
+          paymentIntentId: paymentIntent.id,
+          paymentStatus: paymentIntent.status,
+          paymentDetails: paymentIntent,
+        };
+
+        const finalizeRes = await apiRequest(
+          "POST",
+          "/update-application-status",
+          finalizePayload,
+          {
+            Authorization: `Bearer ${token}`,
+          }
+        );
+
+        if (!finalizeRes?.data?.status) {
+          const msg =
+            finalizeRes?.data?.message ||
+            "Payment succeeded, but failed to update project status.";
+          setError(msg);
+          toast.error(msg);
+          setLoading(false);
+          return;
+        }
+
+        toast.success("Payment Successful!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
         setSuccess(true);
         setError(null);
       } else {
@@ -119,7 +157,8 @@ const StripePayment = () => {
         toast.error(msg);
       }
     } catch (err) {
-      const message = err?.response?.data?.message || err?.message || "Something went wrong";
+      const message =
+        err?.response?.data?.message || err?.message || "Something went wrong";
       setError(message);
       setSuccess(false);
       toast.error(message);
@@ -141,7 +180,14 @@ const StripePayment = () => {
   };
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", marginTop: "150px", marginBottom: "150px" }}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        marginTop: "150px",
+        marginBottom: "150px",
+      }}
+    >
       <form
         onSubmit={handleSubmit}
         style={{
@@ -153,14 +199,30 @@ const StripePayment = () => {
           backgroundColor: "#fff",
         }}
       >
-        <h3 style={{ textAlign: "center", marginBottom: "10px" }}>Stripe Payment</h3>
+        <h3 style={{ textAlign: "center", marginBottom: "10px" }}>
+          Stripe Payment
+        </h3>
 
         {/* ✅ Helpful display so you can confirm it isn't 0 */}
-        <div style={{ textAlign: "center", fontSize: "12px", opacity: 0.7, marginBottom: "20px" }}>
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "12px",
+            opacity: 0.7,
+            marginBottom: "20px",
+          }}
+        >
           Application ID: <b>{applicationId || "missing"}</b>
         </div>
 
-        <div style={{ marginBottom: "20px", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "12px" }}>
+        <div
+          style={{
+            marginBottom: "20px",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+            padding: "12px",
+          }}
+        >
           <CardElement options={cardStyle} />
         </div>
 
@@ -182,8 +244,18 @@ const StripePayment = () => {
           {loading ? "Processing..." : "Pay"}
         </button>
 
-        {error && <p style={{ color: "red", marginTop: "15px", textAlign: "center" }}>{error}</p>}
-        {success && <p style={{ color: "green", marginTop: "15px", textAlign: "center" }}>Payment Successful!</p>}
+        {error && (
+          <p style={{ color: "red", marginTop: "15px", textAlign: "center" }}>
+            {error}
+          </p>
+        )}
+        {success && (
+          <p
+            style={{ color: "green", marginTop: "15px", textAlign: "center" }}
+          >
+            Payment Successful!
+          </p>
+        )}
       </form>
     </div>
   );
