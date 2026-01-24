@@ -177,13 +177,14 @@ const Chat = () => {
   };
 
   const sendMessage = async () => {
-    if (!input || !currentChatUser) return;
+    if (!input.trim() || !currentChatUser) return;
 
     setLoading(true);
+    const messageText = input.trim();
 
     try {
       const payload = new FormData();
-      payload.append("message", input);
+      payload.append("message", messageText);
       payload.append("to", currentChatUser.id);
       if (selectedFile) payload.append("file", selectedFile);
 
@@ -192,10 +193,20 @@ const Chat = () => {
       });
 
       if (response.data?.status) {
+        // Add the sent message to the messages list immediately
+        const sentMessage = {
+          id: response.data.data?.id || Date.now(),
+          from: user_id,
+          to: currentChatUser.id,
+          text: messageText,
+          created_at: response.data.data?.created_at || new Date().toISOString(),
+          file: response.data.data?.file || null,
+          userId: user_id,
+        };
+        setMessages((prev) => [...prev, sentMessage]);
         setInput("");
         setSelectedFile(null);
         setPreviewUrl(null);
-        // setMessages((prev) => [...prev, response.data.message]);
       } else {
         toast.error("Failed to send message");
       }
