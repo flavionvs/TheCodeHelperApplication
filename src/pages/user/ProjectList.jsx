@@ -131,15 +131,17 @@ const ProjectList = () => {
         accessorKey: "chat",
         header: "Chat",
         cell: ({ row }) => {
-          const chatUserId = row.original.approved_freelancer_id;
+          const chatUserId = row.original.chat_user_id;
+          const appStatus = row.original.application_status;
+          const canChat = appStatus === "Approved" || appStatus === "Completion Requested";
 
           return (
             <div>
-              {row.original.status === "Approved" && (
+              {canChat && chatUserId && (
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={() =>
-                    (window.location.href = `/codehelper/web/user/chat?user_id=${chatUserId}`)
+                    (window.location.href = `/user/chat?user_id=${chatUserId}`)
                   }
                 >
                   Chat
