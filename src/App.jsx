@@ -53,7 +53,7 @@ import ChangePassword from "./pages/ChangePassword";
 import ProjectCreate from "./pages/ProjectCreate";
 
 
-const stripePromise = loadStripe("pk_test_51R6XWiJKuUaFK6VWYrSUSk7kNsyJoBPUO9gvnz9yVbN6QgZePfNDK8sPZIZvZG7z6VDAAflDPbk6BS6PdPcwmASD00Kq8SygY8"); // Replace with your own publishable key
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_51R6XWiJKuUaFK6VWYrSUSk7kNsyJoBPUO9gvnz9yVbN6QgZePfNDK8sPZIZvZG7z6VDAAflDPbk6BS6PdPcwmASD00Kq8SygY8");
 
 const isAuthenticated = () => {
   return !!localStorage.getItem("token");
