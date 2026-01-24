@@ -4,7 +4,7 @@ import { useLoader } from "../../ui/LoaderContext";
 import { toast } from "react-toastify";
 import { apiRequest } from "../../utils/api";
 import Table from "../../ui/Table";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const user_id = localStorage.getItem("user_id")
@@ -12,6 +12,7 @@ const Dashboard = () => {
     : null;
 
   const { showLoader, hideLoader } = useLoader();
+  const navigate = useNavigate();
 
   const [data, setData] = useState({});
   const [projects, setProjects] = useState([]);
@@ -288,14 +289,24 @@ const Dashboard = () => {
                       marginBottom: "15px",
                       backgroundColor: "#fafafa",
                       transition: "0.3s",
-                      cursor: "pointer",
+                      cursor: n.link ? "pointer" : "default",
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f1f1f1")}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fafafa")}
+                    onClick={() => {
+                      if (n.link) {
+                        navigate(n.link);
+                      }
+                    }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <h3 style={{ fontSize: "18px", fontWeight: "600", margin: 0, color: "#222" }}>
                         {n.title || "No Title"}
+                        {n.link && (
+                          <span style={{ fontSize: "12px", marginLeft: "10px", color: "#007bff" }}>
+                            <i className="fa fa-external-link-alt"></i>
+                          </span>
+                        )}
                       </h3>
                       <span style={{ fontSize: "13px", color: "#888" }}>
                         {new Date(n.created_at).toLocaleString()}
@@ -304,6 +315,21 @@ const Dashboard = () => {
                     <p style={{ marginTop: "8px", fontSize: "15px", color: "#555", lineHeight: "1.6" }}>
                       {n.message || "No message provided."}
                     </p>
+                    {n.type && (
+                      <span 
+                        style={{ 
+                          fontSize: "11px", 
+                          padding: "2px 8px", 
+                          borderRadius: "4px", 
+                          backgroundColor: n.type === 'completed' ? '#28a745' : n.type === 'project' ? '#007bff' : n.type === 'cancelled' ? '#dc3545' : '#6c757d',
+                          color: '#fff',
+                          marginTop: '8px',
+                          display: 'inline-block'
+                        }}
+                      >
+                        {n.type.charAt(0).toUpperCase() + n.type.slice(1)}
+                      </span>
+                    )}
                   </div>
                 ))
               ) : (
