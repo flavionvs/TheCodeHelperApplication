@@ -405,10 +405,19 @@ const Chat = () => {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                onKeyDown={(e) => e.key === "Enter" && !loading && sendMessage()}
                 placeholder="Type your message..."
+                disabled={loading}
               />
-              <button onClick={sendMessage}>Send</button>
+              <button onClick={sendMessage} disabled={loading}>
+                {loading ? (
+                  <span>
+                    <i className="fa fa-spinner fa-spin"></i> Sending...
+                  </span>
+                ) : (
+                  "Send"
+                )}
+              </button>
             </div>
           </div>
         )}
