@@ -177,14 +177,15 @@ const Chat = () => {
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || !currentChatUser) return;
+    // Allow sending if there's text OR a file
+    if ((!input.trim() && !selectedFile) || !currentChatUser) return;
 
     setLoading(true);
     const messageText = input.trim();
 
     try {
       const payload = new FormData();
-      payload.append("message", messageText);
+      payload.append("message", messageText || "");
       payload.append("to", currentChatUser.id);
       if (selectedFile) payload.append("file", selectedFile);
 
@@ -198,7 +199,7 @@ const Chat = () => {
           id: response.data.data?.id || Date.now(),
           from: user_id,
           to: currentChatUser.id,
-          text: messageText,
+          text: messageText || "",
           created_at: response.data.data?.created_at || new Date().toISOString(),
           file: response.data.data?.file || null,
           userId: user_id,
