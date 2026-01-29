@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useNotifications } from "../../context/NotificationContext";
 
 const Sidebar = () => {
   const location = useLocation();
   const fullPath = `${location.pathname}${location.search}`;
   const [isProjectOpen, setIsProjectOpen] = useState(false);
+  
+  const { unreadCount, fetchUnreadCount } = useNotifications();
 
   let user = {};
   try {
@@ -13,6 +16,11 @@ const Sidebar = () => {
   } catch (e) {
     console.error("Failed to parse user from localStorage", e);
   }
+
+  // Fetch unread count on mount
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
 
   const toggleProjects = (e) => {
     e.preventDefault();
@@ -28,8 +36,27 @@ const Sidebar = () => {
         <div className="sidebar-inner">
           <ul className="navigation">
             <li className={fullPath === "/user/dashboard" ? "active" : ""}>
-              <Link to="/user/dashboard">
-                <i className="la la-caret-right"></i> Dashboard
+              <Link to="/user/dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>
+                  <i className="la la-caret-right"></i> Dashboard
+                </span>
+                {unreadCount > 0 && (
+                  <span 
+                    style={{
+                      backgroundColor: '#dc3545',
+                      color: '#fff',
+                      borderRadius: '50%',
+                      padding: '2px 8px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      minWidth: '22px',
+                      textAlign: 'center',
+                      marginLeft: '8px'
+                    }}
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </Link>
             </li>
 

@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { apiRequest } from "../../utils/api";
 import Table from "../../ui/Table";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useNotifications } from "../../context/NotificationContext";
 
 const Dashboard = () => {
   const user_id = localStorage.getItem("user_id")
@@ -13,6 +14,7 @@ const Dashboard = () => {
 
   const { showLoader, hideLoader } = useLoader();
   const navigate = useNavigate();
+  const { setNotificationsFromDashboard, markAsRead, markAllAsRead, unreadCount } = useNotifications();
 
   const [data, setData] = useState({});
   const [projects, setProjects] = useState([]);
@@ -63,6 +65,12 @@ const Dashboard = () => {
         setProjects(response.data.projects || []);
         setNotifications(response.data.notification || []);
         setData(response.data.data || {});
+        
+        // Update notification context with dashboard data
+        setNotificationsFromDashboard(
+          response.data.notification || [], 
+          response.data.unread_count || 0
+        );
 
         // ✅ If your API ever returns pagination here, this will safely support it
         if (response.data.page) {
@@ -141,6 +149,77 @@ const Dashboard = () => {
     ],
     [from]
   );
+
+  // Helper function to get notification type color
+  const getNotificationTypeColor = (type) => {
+    const colors = {
+      'completed': '#28a745',
+      'completion': '#28a745',
+      'approved': '#007bff',
+      'application': '#17a2b8',
+      'project': '#007bff',
+      'payment': '#28a745',
+      'cancelled': '#dc3545',
+      'rejected': '#dc3545',
+      'message': '#6c757d',
+    };
+    return colors[type?.toLowerCase()] || '#6c757d';
+  };
+
+  // Helper function to determine the link for a notification
+  const getNotificationLink = (notification, user) => {
+    // If notification has a direct link, use it
+    if (notification.link) {
+      // Convert relative links to proper user routes
+      if (notification.link.startsWith('/dashboard')) {
+        return notification.link.replace('/dashboard', '/user/dashboard');
+      }
+      return notification.link;
+    }
+
+    // Otherwise, determine link based on notification type and reference_id
+    const type = notification.type?.toLowerCase();
+    const refId = notification.reference_id;
+    
+    if (!type) return null;
+
+    // Determine route based on notification type and user role
+    switch (type) {
+      case 'application':
+        // Client: go to applications list, Freelancer: go to applied projects
+        if (user.role === 'Client' && refId) {
+          return `/user/applications/${refId}`;
+        }
+        return '/user/project?type=applied';
+        
+      case 'approved':
+      case 'payment':
+        // Go to ongoing projects
+        return '/user/project?type=ongoing';
+        
+      case 'completion':
+      case 'completed':
+        // Go to completed projects
+        return '/user/project?type=completed';
+        
+      case 'project':
+        // Go to project list
+        if (user.role === 'Client') {
+          return '/user/project?type=my-projects';
+        }
+        return '/user/project?type=applied';
+        
+      case 'cancelled':
+      case 'rejected':
+        return '/user/project?type=cancelled';
+        
+      case 'message':
+        return '/user/chat';
+        
+      default:
+        return null;
+    }
+  };
 
   return (
     <section className="user-dashboard">
@@ -264,9 +343,48 @@ const Dashboard = () => {
           </div>
 
           <div className="container">
-            <h2 style={{ fontSize: "22px", fontWeight: "600", marginBottom: "20px", color: "#333" }}>
-              Notifications
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: "22px", fontWeight: "600", color: "#333", margin: 0 }}>
+                Notifications
+                {unreadCount > 0 && (
+                  <span 
+                    style={{
+                      backgroundColor: '#dc3545',
+                      color: '#fff',
+                      borderRadius: '50%',
+                      padding: '2px 10px',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      marginLeft: '10px'
+                    }}
+                  >
+                    {unreadCount}
+                  </span>
+                )}
+              </h2>
+              {unreadCount > 0 && (
+                <button
+                  onClick={async () => {
+                    await markAllAsRead();
+                    // Update local state to mark all as read
+                    setNotifications(prev => 
+                      prev.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
+                    );
+                  }}
+                  style={{
+                    backgroundColor: '#007bff',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '5px',
+                    padding: '8px 16px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  Mark All as Read
+                </button>
+              )}
+            </div>
 
             <div
               style={{
@@ -279,59 +397,91 @@ const Dashboard = () => {
               }}
             >
               {notifications && notifications.length > 0 ? (
-                notifications.map((n, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      border: "1px solid #eee",
-                      borderRadius: "8px",
-                      padding: "16px",
-                      marginBottom: "15px",
-                      backgroundColor: "#fafafa",
-                      transition: "0.3s",
-                      cursor: n.link ? "pointer" : "default",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f1f1f1")}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fafafa")}
-                    onClick={() => {
-                      if (n.link) {
-                        navigate(n.link);
-                      }
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <h3 style={{ fontSize: "18px", fontWeight: "600", margin: 0, color: "#222" }}>
-                        {n.title || "No Title"}
-                        {n.link && (
-                          <span style={{ fontSize: "12px", marginLeft: "10px", color: "#007bff" }}>
-                            <i className="fa fa-external-link-alt"></i>
-                          </span>
-                        )}
-                      </h3>
-                      <span style={{ fontSize: "13px", color: "#888" }}>
-                        {new Date(n.created_at).toLocaleString()}
-                      </span>
+                notifications.map((n, index) => {
+                  const isUnread = !n.read_at;
+                  const notificationLink = getNotificationLink(n, user);
+                  
+                  return (
+                    <div
+                      key={n.id || index}
+                      style={{
+                        border: isUnread ? "2px solid #007bff" : "1px solid #eee",
+                        borderRadius: "8px",
+                        padding: "16px",
+                        marginBottom: "15px",
+                        backgroundColor: isUnread ? "#f0f7ff" : "#fafafa",
+                        transition: "0.3s",
+                        cursor: notificationLink ? "pointer" : "default",
+                        position: 'relative'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = isUnread ? "#e6f2ff" : "#f1f1f1")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isUnread ? "#f0f7ff" : "#fafafa")}
+                      onClick={async () => {
+                        // Mark as read if unread
+                        if (isUnread && n.id) {
+                          await markAsRead(n.id);
+                          // Update local state
+                          setNotifications(prev => 
+                            prev.map(notif => 
+                              notif.id === n.id 
+                                ? { ...notif, read_at: new Date().toISOString() }
+                                : notif
+                            )
+                          );
+                        }
+                        // Navigate if link exists
+                        if (notificationLink) {
+                          navigate(notificationLink);
+                        }
+                      }}
+                    >
+                      {isUnread && (
+                        <span 
+                          style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            width: '10px',
+                            height: '10px',
+                            backgroundColor: '#007bff',
+                            borderRadius: '50%'
+                          }}
+                        />
+                      )}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <h3 style={{ fontSize: "18px", fontWeight: isUnread ? "700" : "600", margin: 0, color: "#222" }}>
+                          {n.title || "No Title"}
+                          {notificationLink && (
+                            <span style={{ fontSize: "12px", marginLeft: "10px", color: "#007bff" }}>
+                              <i className="fa fa-external-link-alt"></i>
+                            </span>
+                          )}
+                        </h3>
+                        <span style={{ fontSize: "13px", color: "#888" }}>
+                          {new Date(n.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <p style={{ marginTop: "8px", fontSize: "15px", color: "#555", lineHeight: "1.6" }}>
+                        {n.message || "No message provided."}
+                      </p>
+                      {n.type && (
+                        <span 
+                          style={{ 
+                            fontSize: "11px", 
+                            padding: "2px 8px", 
+                            borderRadius: "4px", 
+                            backgroundColor: getNotificationTypeColor(n.type),
+                            color: '#fff',
+                            marginTop: '8px',
+                            display: 'inline-block'
+                          }}
+                        >
+                          {n.type.charAt(0).toUpperCase() + n.type.slice(1).replace('_', ' ')}
+                        </span>
+                      )}
                     </div>
-                    <p style={{ marginTop: "8px", fontSize: "15px", color: "#555", lineHeight: "1.6" }}>
-                      {n.message || "No message provided."}
-                    </p>
-                    {n.type && (
-                      <span 
-                        style={{ 
-                          fontSize: "11px", 
-                          padding: "2px 8px", 
-                          borderRadius: "4px", 
-                          backgroundColor: n.type === 'completed' ? '#28a745' : n.type === 'project' ? '#007bff' : n.type === 'cancelled' ? '#dc3545' : '#6c757d',
-                          color: '#fff',
-                          marginTop: '8px',
-                          display: 'inline-block'
-                        }}
-                      >
-                        {n.type.charAt(0).toUpperCase() + n.type.slice(1)}
-                      </span>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p style={{ textAlign: "center", color: "#777", fontSize: "15px", marginTop: "30px" }}>
                   No notifications found.

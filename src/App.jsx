@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation, Navigate, BrowserR
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
+import { NotificationProvider } from "./context/NotificationContext";
 
 // import './assets/css/bootstrap.css';
  import './assets/css/style.css';
@@ -179,9 +180,11 @@ const App = () => {
     <Elements stripe={stripePromise}>  
     <LoaderProvider > {/* <- Global loader shown here */}
     <BrowserRouter>
+    <NotificationProvider>
     <WalletProvider>
       <AppLayout />
     </WalletProvider>
+    </NotificationProvider>
     </BrowserRouter>
     </LoaderProvider>
     </Elements>  
