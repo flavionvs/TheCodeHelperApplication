@@ -23,7 +23,7 @@ const Application = () => {
   // ✅ store selected application row (avoid state timing issues)
   const [selectedApp, setSelectedApp] = useState(null);
 
-  // ✅ store selected application id (MUST be applications.my_row_id now)
+  // ✅ store selected application id
   const [selectedAppId, setSelectedAppId] = useState(0);
 
   const [projectAmount, setProjectAmount] = useState({});
@@ -44,8 +44,8 @@ const Application = () => {
     return Number.isInteger(n) && n > 0 ? n : 0;
   };
 
-  // ✅ helper: correct Application identifier is my_row_id (NOT id)
-  const getAppPk = (app) => toPositiveInt(app?.my_row_id);
+  // ✅ helper: get Application primary key (id)
+  const getAppPk = (app) => toPositiveInt(app?.id);
 
   useEffect(() => {
     fetchProjects(page);
@@ -148,7 +148,7 @@ const Application = () => {
         cell: ({ row }) => {
           const app = row.original;
 
-          // ✅ IMPORTANT: application primary key is my_row_id (backend must include it in API response)
+          // ✅ Get application primary key
           const appPk = getAppPk(app);
 
           const buttons = [
@@ -172,10 +172,10 @@ const Application = () => {
               name: "Approve",
               type: "pay",
               onClick: () => {
-                // ✅ HARD BLOCK if API did not return my_row_id
+                // ✅ HARD BLOCK if API did not return id
                 if (!appPk) {
                   toast.error(
-                    "Application ID missing (my_row_id). Please refresh. If it persists, backend must include my_row_id."
+                    "Application ID missing. Please refresh the page."
                   );
                   return;
                 }
@@ -211,8 +211,7 @@ const Application = () => {
               app.status !== "Completed" && {
                 id: appPk || app?.id,
                 name: "Cancel",
-                // NOTE: if cancel endpoint expects legacy id, this may need backend alignment too.
-                // Keeping as original for now to avoid breaking. If cancel fails, update backend to accept my_row_id.
+
                 url: `/application/cancel/${app.id}`,
               },
           ];
@@ -243,9 +242,9 @@ const Application = () => {
       return;
     }
 
-    // ✅ CRITICAL: use my_row_id everywhere, and NEVER accept 0
+    // ✅ CRITICAL: use application id, and NEVER accept 0
     const appId =
-      toPositiveInt(selectedApp?.my_row_id) ||
+      toPositiveInt(selectedApp?.id) ||
       toPositiveInt(selectedAppId) ||
       toPositiveInt(localStorage.getItem("selected_application_id"));
 
@@ -275,7 +274,7 @@ const Application = () => {
       // ✅ backend calculates amount from Application (recommended)
       const updatedData = {
         paymentMethod: paymentMethod.id,
-        applicationId: appId, // ✅ this is my_row_id now
+        applicationId: appId,
       };
 
       const response = await apiRequest("POST", "/payment", updatedData, {
@@ -342,8 +341,8 @@ const Application = () => {
       // ✅ NEW: If paymentIntent succeeded (either immediately OR after 3DS), finalize in backend
       if (paymentIntent && paymentIntent.status === "succeeded") {
         const applicationData = {
-          applicationId: appId, // ✅ my_row_id
-          // Stripe amount is in cents; backend should handle conversion safely (it already does in your latest backend)
+          applicationId: appId,
+          // Stripe amount is in cents; backend should handle conversion safely
           amount: paymentIntent.amount,
           paymentIntentId: paymentIntent.id,
           paymentStatus: paymentIntent.status,
@@ -404,7 +403,7 @@ const Application = () => {
         }
 
         const applicationData = {
-          applicationId: appId, // ✅ my_row_id
+          applicationId: appId,
           amount: pi.amount,
           paymentIntentId: pi.id,
           paymentStatus: pi.status,
