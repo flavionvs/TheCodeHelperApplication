@@ -1707,6 +1707,19 @@ a.page-link {
 
 .page-wrapper{
   width:100vw!important;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure header is always at the top of viewport */
+.main-header {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0;
+  width: 100%;
+  z-index: 999;
+  background: #fff;
 }
 
 .global-loader {
