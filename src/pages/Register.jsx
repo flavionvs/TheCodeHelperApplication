@@ -93,6 +93,24 @@ const Register = () => {
       const response = await apiRequest("POST", "/register", payload);
 
       if (response.data?.status) {
+        // Check if email verification is required
+        if (response.data?.requires_verification) {
+          toast.success(response.data.message, {
+            position: "top-right",
+            autoClose: 3000,
+          });
+          
+          // Navigate to verify email page with email and role
+          navigate("/verify-email", { 
+            state: { 
+              email: response.data.data.email,
+              role: response.data.data.role
+            } 
+          });
+          return;
+        }
+        
+        // Legacy flow (if server returns token directly)
         if (response.data?.access_token) {
           localStorage.setItem("token", response.data.access_token);
           localStorage.setItem(

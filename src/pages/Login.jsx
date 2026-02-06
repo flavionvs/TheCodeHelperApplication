@@ -55,6 +55,23 @@ const Login = () => {
 
 
       } else {
+        // Check if email verification is required
+        if (response.data?.requires_verification) {
+          toast.info(response.data.message, {
+            position: "top-right",
+            autoClose: 3000,
+          });
+          
+          // Navigate to verify email page
+          navigate("/verify-email", { 
+            state: { 
+              email: response.data.data?.email || formData.email,
+              role: response.data.data?.role || ""
+            } 
+          });
+          return;
+        }
+        
         if (!response.validation_error) {
           toast.error(response.data?.message || response.message || "Something went wrong.", {
             position: "top-right",

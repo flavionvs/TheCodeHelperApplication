@@ -52,6 +52,7 @@ import LinkSent from "./pages/LinkSent";
 import ForgotPassword from "./pages/ForgotPassword";
 import ChangePassword from "./pages/ChangePassword";
 import ProjectCreate from "./pages/ProjectCreate";
+import VerifyEmail from "./pages/VerifyEmail";
 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_51R6XWiJKuUaFK6VWYrSUSk7kNsyJoBPUO9gvnz9yVbN6QgZePfNDK8sPZIZvZG7z6VDAAflDPbk6BS6PdPcwmASD00Kq8SygY8");
@@ -85,7 +86,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 const AppLayout = () => {
   
   const location = useLocation();
-  const hideFooterPages = location.pathname.startsWith("/user") || location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/link-sent";
+  const hideFooterPages = location.pathname.startsWith("/user") || location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/verify-email" || location.pathname === "/link-sent";
 
 
   useEffect(() => {
@@ -129,6 +130,7 @@ const AppLayout = () => {
         <Route path="view-profile/:profileId" element={<ViewProfile />} />  {/* Relative path (correct way) */}
 
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} /> 
+        <Route path="/verify-email" element={<PublicRoute><VerifyEmail /></PublicRoute>} /> 
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} /> 
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} /> 
         <Route path="/change-password" element={<PublicRoute><ChangePassword /></PublicRoute>} /> 
