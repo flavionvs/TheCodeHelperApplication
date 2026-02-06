@@ -19,6 +19,11 @@ a{
 }
 .sticky-top{
 	background:rgba(255,255,255);
+	z-index: 1000;
+}
+.main-header {
+	position: relative;
+	z-index: 1001;
 }
 .tu-navbar {
     padding: 0 8px;
@@ -1572,7 +1577,13 @@ a.page-link {
 }
 .modal-header {
     background: #1967D2;
-    color: #fff; position:relative;
+    color: #fff;
+    position: relative;
+}
+.modal-header p,
+.modal-header small {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0;
 }
 .modal-header .btn-close {
     position: absolute;
