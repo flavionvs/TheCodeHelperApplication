@@ -19,11 +19,6 @@ a{
 }
 .sticky-top{
 	background:rgba(255,255,255);
-	z-index: 1000;
-}
-.main-header {
-	position: relative;
-	z-index: 1001;
 }
 .tu-navbar {
     padding: 0 8px;
