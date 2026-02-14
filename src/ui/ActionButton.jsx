@@ -13,6 +13,7 @@ const ActionButton = ({ id, buttons = [], onDeleteSuccess }) => {
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [cancelModal, setCancelModal] = useState(false);
   const [remarks, setRemarks] = useState("");
+  const [cancelReason, setCancelReason] = useState("");
   const [attachments, setAttachments] = useState([]);
   const [submitUrl, setSubmitUrl] = useState("");
   const [errors, setErrors] = useState({});
@@ -44,7 +45,10 @@ const ActionButton = ({ id, buttons = [], onDeleteSuccess }) => {
     showLoader();
     setErrors({});
     const data = new FormData();
-    data.append("remark", remarks);        
+    data.append("remark", remarks);
+    if (cancelReason) {
+      data.append("cancel_reason", cancelReason);
+    }
   
     for (let i = 0; i < attachments.length; i++) {
       data.append("attachments[]", attachments[i]);
@@ -196,11 +200,16 @@ const ActionButton = ({ id, buttons = [], onDeleteSuccess }) => {
             <form onSubmit={handleSubmit} encType="multipart/form-data">
               <div className="form-group">
                 <label>Reason</label>                                        
-                <textarea name="cancel_reason" className="form-control"></textarea>
+                <textarea 
+                  name="cancel_reason" 
+                  className="form-control"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                ></textarea>
               </div>
               <div className="modal-actions mt-3">
                 <button type="submit" className="btn btn-primary">Submit</button>&nbsp;
-                <button type="button" className="btn btn-secondary" onClick={() => setCancelModal(false)}>Cancel</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setCancelModal(false)}>Close</button>
               </div>
             </form>
           </div>
