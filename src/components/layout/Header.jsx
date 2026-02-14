@@ -168,6 +168,16 @@ const Header = () => {
             <img src={logo} alt="logo" style={{ height: 64 }} />
           </Link>
 
+          {/* Mobile Dashboard Header - Title and Explore Link */}
+          {location.pathname.startsWith("/user") && (
+            <div className="mobile-dashboard-header d-flex align-items-center gap-2">
+              <span className="fw-bold" style={{ fontSize: '14px' }}>{user.role} Dashboard</span>
+              <Link to="/projects" className="btn btn-sm btn-outline-primary" style={{ fontSize: '11px', padding: '4px 8px' }}>
+                Explore Projects
+              </Link>
+            </div>
+          )}
+
           <button
             className="mobile-nav-toggler btn btn-link p-0"
             onClick={() => setMobileOpen((prev) => !prev)}

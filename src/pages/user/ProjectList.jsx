@@ -290,28 +290,41 @@ const ProjectList = () => {
       {
         accessorKey: "actions",
         header: "Actions",
-        cell: ({ row }) => (
-          <ActionButton
-            id={row.original.id}
-            onDeleteSuccess={handleDeleteSuccess}
-            buttons={[
-              row.original.application === 0
-                ? {
-                    type: "link",
-                    name: "Edit",
-                    url: `/user/project/edit/${row.original.id}`,
-                  }
-                : null,
-              row.original.application === 0
-                ? {
-                    action: "delete",
-                    name: "Delete",
-                    deleteUrl: `/project/delete/${row.original.id}`,
-                  }
-                : null,
-            ].filter(Boolean)}
-          />
-        ),
+        cell: ({ row }) => {
+          const status = (row.original.status ?? "").toString().trim().toLowerCase();
+          const isApproved = status === "approved";
+          const applicationId = row.original.selected_application_id;
+          
+          return (
+            <ActionButton
+              id={row.original.id}
+              onDeleteSuccess={handleDeleteSuccess}
+              buttons={[
+                row.original.application === 0
+                  ? {
+                      type: "link",
+                      name: "Edit",
+                      url: `/user/project/edit/${row.original.id}`,
+                    }
+                  : null,
+                row.original.application === 0
+                  ? {
+                      action: "delete",
+                      name: "Delete",
+                      deleteUrl: `/project/delete/${row.original.id}`,
+                    }
+                  : null,
+                // Cancel button for approved projects
+                isApproved && applicationId
+                  ? {
+                      name: "Cancel",
+                      url: `/application/cancel/${applicationId}`,
+                    }
+                  : null,
+              ].filter(Boolean)}
+            />
+          );
+        },
       },
     ],
     // keep same dependency behavior as your original (it was [])
