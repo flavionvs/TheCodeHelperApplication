@@ -36,7 +36,6 @@ import Professional from './pages/user/freelancer/Professional';
 import Application from "./pages/user/Application";
 import ApplicationDetails from "./pages/user/ApplicationDetails";
 import ProjectListing from './pages/ProjectListing';
-import StripePayment from "./pages/StripePayment";
 import Shop from "./pages/Shop";
 import ProjectDetail from "./pages/ProjectDetail";
 import Chat from './pages/user/Chat';
@@ -114,8 +113,6 @@ const AppLayout = () => {
       <ScrollToTop/>
       <Routes>
         <Route path="/" element={<Home />} /> 
-        <Route path="/payment" element={<StripePayment />} />
-        <Route path="/new-payment" element={<StripePayment />} />
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/apply/:slug" element={<ProjectDetail />} /> 
         {/* <Route path="/projects" element={<ProjectListing />} />  */}

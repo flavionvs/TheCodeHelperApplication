@@ -336,12 +336,12 @@ const Application = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title" id="approveModalLabel">
-                  Approve Proposal
+                  Confirm Payment
                 </h5>
                 <p>
                   <small>
-                    Fill out the form below to submit a project proposal. You
-                    should receive a response within 48 hours.
+                    Review the fee breakdown below and click Pay to proceed
+                    to the secure Stripe payment page.
                   </small>
                 </p>
                 <button
