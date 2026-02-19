@@ -58,18 +58,21 @@ const PaymentSuccess = () => {
 
   return (
     <section
-      className="user-dashboard"
       style={{
-        minHeight: "60vh",
+        minHeight: "100vh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        paddingTop: "100px",
+        paddingBottom: "40px",
+        background: "#f5f7fa",
       }}
     >
       <div
         style={{
           textAlign: "center",
           maxWidth: "500px",
+          width: "90%",
           padding: "40px",
           background: "#fff",
           borderRadius: "16px",
