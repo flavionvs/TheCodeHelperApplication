@@ -29,7 +29,7 @@ const ProjectList = () => {
   const type = searchParams.get("type");
 
   const columnVisibility = {
-    actions: type == "my-projects",
+    actions: type == "my-projects" || (type == "ongoing" && user.role === "Client"),
     application: user.role === "Client",
     status: user.role === "Client",
     mark_complete: user.role === "Freelancer" && type == "ongoing",
@@ -291,6 +291,10 @@ const ProjectList = () => {
         accessorKey: "actions",
         header: "Actions",
         cell: ({ row }) => {
+          const status = (row.original.status ?? "").toString().trim().toLowerCase();
+          const isInProgress = status === "in_progress";
+          const selectedAppId = row.original.selected_application_id;
+
           return (
             <ActionButton
               id={row.original.id}
@@ -308,6 +312,12 @@ const ProjectList = () => {
                       action: "delete",
                       name: "Delete",
                       deleteUrl: `/project/delete/${row.original.id}`,
+                    }
+                  : null,
+                isInProgress && selectedAppId
+                  ? {
+                      name: "Cancel",
+                      url: `/application/cancel/${selectedAppId}`,
                     }
                   : null,
               ].filter(Boolean)}
