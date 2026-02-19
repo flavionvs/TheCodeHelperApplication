@@ -177,6 +177,7 @@ const StripePayment = () => {
       },
       invalid: { color: "#fa755a", iconColor: "#fa755a" },
     },
+    hidePostalCode: true,
   };
 
   return (
