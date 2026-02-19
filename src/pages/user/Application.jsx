@@ -13,6 +13,10 @@ const Application = () => {
 
   const [desc, setDesc] = useState("");
 
+  // ✅ store selected application for the confirmation modal
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [projectAmount, setProjectAmount] = useState({});
+
   const [loading, setLoading] = useState(true);
   const [button, setButton] = useState(false);
   const [page, setPage] = useState(1);
@@ -181,7 +185,7 @@ const Application = () => {
               id: appPk || app?.id,
               name: "Approve",
               type: "pay",
-              onClick: async () => {
+              onClick: () => {
                 // ✅ HARD BLOCK if API did not return id
                 if (!appPk) {
                   toast.error(
@@ -190,34 +194,27 @@ const Application = () => {
                   return;
                 }
 
-                if (button) return; // prevent double-click
-                setButton(true);
+                // ✅ Store selected application for the modal
+                setSelectedApp(app);
 
-                try {
-                  toast.info("Redirecting to payment page...", { autoClose: 3000 });
+                const amountData = {
+                  amount: app.amount ?? app.total_amount ?? 0,
+                  admin_commission: app.admin_commission,
+                  admin_amount: app.admin_amount,
+                  stripe_commission: app.stripe_commission,
+                  stripe_amount: app.stripe_amount,
+                  stripe_fee: app.stripe_fee,
+                  total_amount: app.total_amount ?? app.amount ?? 0,
+                };
+                setProjectAmount(amountData);
 
-                  const response = await apiRequest(
-                    "POST",
-                    "/create-checkout-session",
-                    { applicationId: appPk },
-                    { Authorization: `Bearer ${token}` }
+                // Show confirmation modal
+                setTimeout(() => {
+                  const modal = new bootstrap.Modal(
+                    document.getElementById("approveModal")
                   );
-
-                  if (response.data?.status && response.data?.checkout_url) {
-                    // Redirect to Stripe Checkout
-                    window.location.href = response.data.checkout_url;
-                  } else {
-                    toast.error(
-                      response.data?.message || "Failed to create payment session. Please try again."
-                    );
-                    setButton(false);
-                  }
-                } catch (err) {
-                  toast.error(
-                    err?.response?.data?.message || "Failed to create payment session."
-                  );
-                  setButton(false);
-                }
+                  modal.show();
+                }, 100);
               },
             },
             app.status !== "Pending" &&
@@ -251,6 +248,48 @@ const Application = () => {
     }
   }, [searchParams]);
 
+  // ✅ Proceed to Stripe Checkout after user confirms in modal
+  const handleProceedToPayment = async () => {
+    const appPk = getAppPk(selectedApp);
+    if (!appPk) {
+      toast.error("Application ID missing. Please click Approve again.");
+      return;
+    }
+
+    if (button) return;
+    setButton(true);
+
+    try {
+      toast.info("Redirecting to payment page...", { autoClose: 3000 });
+
+      const response = await apiRequest(
+        "POST",
+        "/create-checkout-session",
+        { applicationId: appPk },
+        { Authorization: `Bearer ${token}` }
+      );
+
+      if (response.data?.status && response.data?.checkout_url) {
+        // Close modal before redirecting
+        const modalElement = document.getElementById("approveModal");
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        modalInstance?.hide();
+
+        window.location.href = response.data.checkout_url;
+      } else {
+        toast.error(
+          response.data?.message || "Failed to create payment session. Please try again."
+        );
+        setButton(false);
+      }
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message || "Failed to create payment session."
+      );
+      setButton(false);
+    }
+  };
+
   return (
     <>
       <div className={`modal-loader ${button ? "show" : "hide"}`}></div>
@@ -280,6 +319,72 @@ const Application = () => {
                     }}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Approve Proposal Modal */}
+        <div
+          className="modal fade"
+          id="approveModal"
+          tabIndex="-1"
+          aria-labelledby="approveModalLabel"
+          aria-hidden="true"
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="approveModalLabel">
+                  Approve Proposal
+                </h5>
+                <p>
+                  <small>
+                    Fill out the form below to submit a project proposal. You
+                    should receive a response within 48 hours.
+                  </small>
+                </p>
+                <button
+                  type="button"
+                  className="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+
+              <div className="modal-body">
+                <ul>
+                  <li>Price : ${projectAmount.amount}</li>
+                  <li>
+                    Code helper commission : ${projectAmount.admin_amount} (
+                    {projectAmount.admin_commission} %)
+                  </li>
+                  <li>
+                    Payment commission : ${projectAmount.stripe_amount} (
+                    {projectAmount.stripe_commission} %)
+                  </li>
+                  <li>Payment Fee : ${projectAmount.stripe_fee}</li>
+                </ul>
+
+                <button
+                  type="button"
+                  disabled={button}
+                  onClick={handleProceedToPayment}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    backgroundColor: "#6772e5",
+                    color: "#fff",
+                    fontWeight: "bold",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: button ? "not-allowed" : "pointer",
+                    transition: "background-color 0.3s",
+                    opacity: button ? 0.7 : 1,
+                  }}
+                >
+                  {button ? "Redirecting..." : `Pay $${projectAmount.total_amount}`}
+                </button>
               </div>
             </div>
           </div>
