@@ -102,11 +102,11 @@ const Account = () => {
                       <tbody>
                         <tr>
                           <th>Available Balance</th>
-                          <td>{availabelBalance ?? 0}</td>
+                          <td>${availabelBalance ?? "0.00"}</td>
                         </tr>
                         <tr>
                           <th>Pending Balance</th>
-                          <td>{pendingBalance ?? 0}</td>
+                          <td>${pendingBalance ?? "0.00"}</td>
                         </tr>
                         <tr>
                           <th>Name</th>

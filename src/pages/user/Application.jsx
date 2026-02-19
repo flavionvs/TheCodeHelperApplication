@@ -188,7 +188,7 @@ const Application = () => {
                 setSelectedApp(app);
 
                 // ✅ use reliable fields (prefer total_amount)
-                setProjectAmount({
+                const amountData = {
                   amount: app.amount ?? app.total_amount ?? 0,
                   admin_commission: app.admin_commission,
                   admin_amount: app.admin_amount,
@@ -196,7 +196,11 @@ const Application = () => {
                   stripe_amount: app.stripe_amount,
                   stripe_fee: app.stripe_fee,
                   total_amount: app.total_amount ?? app.amount ?? 0,
-                });
+                };
+                setProjectAmount(amountData);
+
+                // ✅ Store application data for StripePayment.jsx fallback
+                localStorage.setItem("selected_application_data", JSON.stringify(amountData));
 
                 setTimeout(() => {
                   const modal = new bootstrap.Modal(
@@ -471,6 +475,7 @@ const Application = () => {
   };
 
   const cardStyle = {
+    hidePostalCode: true,
     style: {
       base: {
         fontSize: "16px",

@@ -55,7 +55,7 @@ import ProjectCreate from "./pages/ProjectCreate";
 import VerifyEmail from "./pages/VerifyEmail";
 
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_51R6XWiJKuUaFK6VWYrSUSk7kNsyJoBPUO9gvnz9yVbN6QgZePfNDK8sPZIZvZG7z6VDAAflDPbk6BS6PdPcwmASD00Kq8SygY8");
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const isAuthenticated = () => {
   return !!localStorage.getItem("token");

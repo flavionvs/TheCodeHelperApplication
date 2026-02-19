@@ -1,24 +1,22 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import { toast } from "react-toastify";
 import { apiRequest } from "../utils/api";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const StripePayment = () => {
   const stripe = useStripe();
   const elements = useElements();
   const token = localStorage.getItem("token");
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [applicationData, setApplicationData] = useState(null);
 
-  // ✅ applicationId MUST come from the application the client is paying for
-  // We read from:
-  // 1) query string ?applicationId=123 (recommended)
-  // 2) query string ?application_id=123
-  // 3) localStorage selected_application_id (fallback)
+  // ✅ applicationId from query string or localStorage
   const applicationId = useMemo(() => {
     const qs = new URLSearchParams(location.search);
     const fromQuery = qs.get("applicationId") || qs.get("application_id");
@@ -29,6 +27,31 @@ const StripePayment = () => {
 
     return 0;
   }, [location.search]);
+
+  // ✅ Fetch application details to show amount
+  useEffect(() => {
+    if (applicationId && token) {
+      fetchApplicationDetails();
+    }
+  }, [applicationId]);
+
+  const fetchApplicationDetails = async () => {
+    try {
+      // Try to get the application details from localStorage first
+      const storedApp = localStorage.getItem("selected_application_data");
+      if (storedApp) {
+        try {
+          const parsed = JSON.parse(storedApp);
+          if (parsed && parsed.total_amount) {
+            setApplicationData(parsed);
+            return;
+          }
+        } catch (e) { /* ignore parse errors */ }
+      }
+    } catch (err) {
+      console.log("Could not load application details:", err);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,10 +69,8 @@ const StripePayment = () => {
       return;
     }
 
-    // ✅ block if missing
     if (!applicationId || Number(applicationId) === 0) {
-      const msg =
-        "Application ID missing. Open this page like: /stripe-payment?applicationId=123";
+      const msg = "Application ID missing. Please go back and click Approve again.";
       setError(msg);
       toast.error(msg);
       return;
@@ -71,7 +92,7 @@ const StripePayment = () => {
         return;
       }
 
-      // ✅ Send REQUIRED applicationId (backend will calculate amount from DB)
+      // ✅ Backend calculates amount from DB (secure)
       const payload = {
         paymentMethod: paymentMethod.id,
         applicationId: applicationId,
@@ -81,43 +102,58 @@ const StripePayment = () => {
         Authorization: `Bearer ${token}`,
       });
 
-      // backend might return:
-      // - {status:true, paymentIntent:{client_secret:...}} OR
-      // - {requires_action:true, payment_intent_client_secret:...} OR
-      // - {status:true, client_secret:...}
+      console.log("Payment response:", response);
+
+      // ✅ Handle the response — backend may return:
+      // 1. {status:true, paymentIntent:{status:'succeeded'}} → immediate success
+      // 2. {requires_action:true, payment_intent_client_secret:'...'} → needs 3DS
+      // 3. {status:false, message:'...'} → error
+
+      let paymentIntent = response?.data?.paymentIntent || null;
+
+      // Check for 3DS / requires_action
+      const requiresAction =
+        response?.data?.requires_action === true ||
+        response?.data?.requiresAction === true;
+
       const clientSecret =
         response?.data?.payment_intent_client_secret ||
         response?.data?.client_secret ||
-        response?.data?.paymentIntent?.client_secret;
+        response?.data?.clientSecret ||
+        null;
 
-      if (!clientSecret) {
-        const msg =
-          response?.data?.message ||
-          response?.data?.error ||
-          "Payment setup failed.";
-        setError(msg);
-        toast.error(msg);
-        setLoading(false);
-        return;
-      }
-
-      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
-        clientSecret,
-        {
-          payment_method: paymentMethod.id,
+      if ((requiresAction || clientSecret) && stripe) {
+        if (!clientSecret) {
+          toast.error("Payment requires authentication, but client secret was not provided.");
+          setLoading(false);
+          return;
         }
-      );
 
-      if (confirmError) {
-        setError(confirmError.message);
-        setSuccess(false);
-        toast.error(confirmError.message);
-        setLoading(false);
-        return;
+        const confirmResult = await stripe.confirmCardPayment(clientSecret);
+
+        if (confirmResult?.error) {
+          const msg = confirmResult.error.message || "Authentication failed. Please try again.";
+          setError(msg);
+          toast.error(msg);
+          setLoading(false);
+          return;
+        }
+
+        paymentIntent = confirmResult?.paymentIntent || paymentIntent;
+
+        if (!paymentIntent || paymentIntent.status !== "succeeded") {
+          const msg = paymentIntent?.status
+            ? `Payment not completed (status: ${paymentIntent.status}).`
+            : "Payment not completed. Please try again.";
+          setError(msg);
+          toast.error(msg);
+          setLoading(false);
+          return;
+        }
       }
 
-      if (paymentIntent?.status === "succeeded") {
-        // ✅ NEW: finalize in backend so project/payment/status updates even if webhook isn't working
+      // ✅ If payment succeeded (immediately or after 3DS), finalize in backend
+      if (paymentIntent && paymentIntent.status === "succeeded") {
         const finalizePayload = {
           applicationId: applicationId,
           amount: paymentIntent.amount,
@@ -130,35 +166,66 @@ const StripePayment = () => {
           "POST",
           "/update-application-status",
           finalizePayload,
-          {
-            Authorization: `Bearer ${token}`,
-          }
+          { Authorization: `Bearer ${token}` }
         );
 
         if (!finalizeRes?.data?.status) {
-          const msg =
-            finalizeRes?.data?.message ||
-            "Payment succeeded, but failed to update project status.";
+          const msg = finalizeRes?.data?.message || "Payment succeeded, but failed to update project status.";
           setError(msg);
           toast.error(msg);
           setLoading(false);
           return;
         }
 
-        toast.success("Payment Successful!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success("Payment Successful!", { position: "top-right", autoClose: 3000 });
         setSuccess(true);
         setError(null);
-      } else {
-        const msg = `Payment status: ${paymentIntent?.status || "unknown"}`;
-        setError(msg);
-        toast.error(msg);
+        return;
       }
+
+      // ✅ If backend returned {status:true} with paymentIntent (legacy path)
+      if (response?.data?.status && paymentIntent) {
+        const finalizePayload = {
+          applicationId: applicationId,
+          amount: paymentIntent.amount,
+          paymentIntentId: paymentIntent.id,
+          paymentStatus: paymentIntent.status,
+          paymentDetails: paymentIntent,
+        };
+
+        const finalizeRes = await apiRequest(
+          "POST",
+          "/update-application-status",
+          finalizePayload,
+          { Authorization: `Bearer ${token}` }
+        );
+
+        if (finalizeRes?.data?.status) {
+          toast.success("Payment Successful!", { position: "top-right", autoClose: 3000 });
+          setSuccess(true);
+          setError(null);
+        } else {
+          setError(finalizeRes?.data?.message || "Failed to update application status");
+          toast.error(finalizeRes?.data?.message || "Failed to update application status");
+        }
+        return;
+      }
+
+      // ✅ If backend returned {status:true} but no paymentIntent (already handled by backend)
+      if (response?.data?.status) {
+        toast.success("Payment Successful!", { position: "top-right", autoClose: 3000 });
+        setSuccess(true);
+        setError(null);
+        return;
+      }
+
+      // ✅ Error
+      const msg = response?.data?.message || "Payment failed.";
+      setError(msg);
+      toast.error(msg);
+
     } catch (err) {
-      const message =
-        err?.response?.data?.message || err?.message || "Something went wrong";
+      const message = err?.response?.data?.message || err?.message || "Something went wrong";
       setError(message);
       setSuccess(false);
       toast.error(message);
@@ -204,17 +271,41 @@ const StripePayment = () => {
           Stripe Payment
         </h3>
 
-        {/* ✅ Helpful display so you can confirm it isn't 0 */}
-        <div
-          style={{
-            textAlign: "center",
-            fontSize: "12px",
-            opacity: 0.7,
-            marginBottom: "20px",
-          }}
-        >
-          Application ID: <b>{applicationId || "missing"}</b>
-        </div>
+        {applicationData && (
+          <div style={{ marginBottom: "20px", padding: "15px", backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: "14px" }}>
+              <li style={{ marginBottom: "5px" }}>Price: <strong>${applicationData.amount || applicationData.total_amount}</strong></li>
+              {applicationData.admin_amount && (
+                <li style={{ marginBottom: "5px" }}>
+                  Code Helper Commission: ${applicationData.admin_amount} ({applicationData.admin_commission}%)
+                </li>
+              )}
+              {applicationData.stripe_amount && (
+                <li style={{ marginBottom: "5px" }}>
+                  Payment Commission: ${applicationData.stripe_amount} ({applicationData.stripe_commission}%)
+                </li>
+              )}
+              {applicationData.stripe_fee && (
+                <li style={{ marginBottom: "5px" }}>Payment Fee: ${applicationData.stripe_fee}</li>
+              )}
+              <li style={{ marginTop: "10px", fontWeight: "bold", borderTop: "1px solid #dee2e6", paddingTop: "8px" }}>
+                Total: ${applicationData.total_amount}
+              </li>
+            </ul>
+          </div>
+        )}
+
+        {!applicationData && applicationId > 0 && (
+          <div style={{ textAlign: "center", fontSize: "13px", opacity: 0.7, marginBottom: "20px" }}>
+            Application ID: <b>{applicationId}</b>
+          </div>
+        )}
+
+        {!applicationId && (
+          <div style={{ textAlign: "center", color: "red", marginBottom: "20px", fontSize: "14px" }}>
+            No application selected. Please go back and click Approve on an application.
+          </div>
+        )}
 
         <div
           style={{
@@ -229,7 +320,7 @@ const StripePayment = () => {
 
         <button
           type="submit"
-          disabled={!stripe || loading}
+          disabled={!stripe || loading || !applicationId}
           style={{
             width: "100%",
             padding: "12px",
@@ -238,11 +329,15 @@ const StripePayment = () => {
             fontWeight: "bold",
             border: "none",
             borderRadius: "8px",
-            cursor: !stripe || loading ? "not-allowed" : "pointer",
+            cursor: !stripe || loading || !applicationId ? "not-allowed" : "pointer",
             opacity: loading ? 0.7 : 1,
           }}
         >
-          {loading ? "Processing..." : "Pay"}
+          {loading
+            ? "Processing..."
+            : applicationData?.total_amount
+            ? `Pay $${applicationData.total_amount}`
+            : "Pay"}
         </button>
 
         {error && (
@@ -251,9 +346,7 @@ const StripePayment = () => {
           </p>
         )}
         {success && (
-          <p
-            style={{ color: "green", marginTop: "15px", textAlign: "center" }}
-          >
+          <p style={{ color: "green", marginTop: "15px", textAlign: "center" }}>
             Payment Successful!
           </p>
         )}
