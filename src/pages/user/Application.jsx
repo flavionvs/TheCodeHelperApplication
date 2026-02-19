@@ -140,7 +140,31 @@ const Application = () => {
           ) : null;
         },
       },
-      { accessorKey: "status", header: "Status" },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          const app = row.original;
+          return (
+            <div>
+              <span>{app.status}</span>
+              {app.status === "Pending" && app.stripe_connected === false && (
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "#dc3545",
+                    marginTop: "4px",
+                    fontWeight: 600,
+                  }}
+                  title="This freelancer has not connected their Stripe account for payouts"
+                >
+                  ⚠ Stripe not connected
+                </div>
+              )}
+            </div>
+          );
+        },
+      },
       { accessorKey: "date_and_time", header: "DateTime" },
       {
         accessorKey: "actions",
@@ -176,6 +200,15 @@ const Application = () => {
                 if (!appPk) {
                   toast.error(
                     "Application ID missing. Please refresh the page."
+                  );
+                  return;
+                }
+
+                // ✅ Block if freelancer has not connected Stripe account
+                if (app.stripe_connected === false) {
+                  toast.warn(
+                    "This freelancer has not connected their Stripe account yet. They won't be able to receive payouts. Please contact support or ask the freelancer to connect their account.",
+                    { autoClose: 8000 }
                   );
                   return;
                 }

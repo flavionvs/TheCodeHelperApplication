@@ -20,6 +20,7 @@ const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [stripeConnected, setStripeConnected] = useState(true); // default true to avoid flash
 
   const [from, setFrom] = useState(1);
   const [to, setTo] = useState(1);
@@ -65,6 +66,7 @@ const Dashboard = () => {
         setProjects(response.data.projects || []);
         setNotifications(response.data.notification || []);
         setData(response.data.data || {});
+        setStripeConnected(response.data.stripe_connected ?? true);
         
         // Update notification context with dashboard data
         setNotificationsFromDashboard(
@@ -327,6 +329,58 @@ const Dashboard = () => {
               </div>
             </div>
           </>
+        )}
+
+        {/* Stripe Connect Warning for Freelancers */}
+        {user.role !== "Client" && !stripeConnected && (
+          <div
+            style={{
+              background: "linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%)",
+              border: "1px solid #ffc107",
+              borderRadius: "12px",
+              padding: "20px 24px",
+              marginBottom: "25px",
+              display: "flex",
+              alignItems: "center",
+              gap: "16px",
+              boxShadow: "0 2px 8px rgba(255, 193, 7, 0.15)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "32px",
+                lineHeight: 1,
+                flexShrink: 0,
+              }}
+            >
+              ⚠️
+            </div>
+            <div style={{ flex: 1 }}>
+              <h5 style={{ margin: "0 0 6px 0", color: "#856404", fontWeight: 700 }}>
+                Connect Your Stripe Account for Payouts
+              </h5>
+              <p style={{ margin: 0, color: "#856404", fontSize: "14px" }}>
+                You won't be able to receive payments for completed projects until you connect your Stripe account. 
+                Set it up now so clients can pay you seamlessly.
+              </p>
+            </div>
+            <Link
+              to="/user/account"
+              style={{
+                background: "#ffc107",
+                color: "#856404",
+                fontWeight: 700,
+                padding: "10px 20px",
+                borderRadius: "8px",
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+                border: "1px solid #e0a800",
+                fontSize: "14px",
+              }}
+            >
+              Connect Now
+            </Link>
+          </div>
         )}
 
         <div className="upper-title-box">
