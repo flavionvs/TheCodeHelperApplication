@@ -204,15 +204,6 @@ const Application = () => {
                   return;
                 }
 
-                // ✅ Block if freelancer has not connected Stripe account
-                if (app.stripe_connected === false) {
-                  toast.warn(
-                    "This freelancer has not connected their Stripe account yet. They won't be able to receive payouts. Please contact support or ask the freelancer to connect their account.",
-                    { autoClose: 8000 }
-                  );
-                  return;
-                }
-
                 // ✅ store id FIRST + persist (prevents missing id on submit)
                 setSelectedAppId(appPk);
                 localStorage.setItem("selected_application_id", String(appPk));
