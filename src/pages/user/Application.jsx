@@ -1,13 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { apiRequest } from "../../utils/api";
 import Table from "../../ui/Table";
 import ActionButton from "../../ui/ActionButton";
-import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const Application = () => {
   const { projectId } = useParams();
@@ -20,9 +16,6 @@ const Application = () => {
   // ✅ store selected application for the confirmation modal
   const [selectedApp, setSelectedApp] = useState(null);
   const [projectAmount, setProjectAmount] = useState({});
-  // ✅ Stripe embedded checkout state
-  const [checkoutClientSecret, setCheckoutClientSecret] = useState(null);
-  const [showCheckout, setShowCheckout] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [button, setButton] = useState(false);
@@ -255,7 +248,7 @@ const Application = () => {
     }
   }, [searchParams]);
 
-  // ✅ Proceed to Stripe Embedded Checkout after user confirms fees
+  // ✅ Proceed to Stripe Checkout (redirect) after user confirms fees
   const handleProceedToPayment = async () => {
     const appPk = getAppPk(selectedApp);
     if (!appPk) {
@@ -267,6 +260,8 @@ const Application = () => {
     setButton(true);
 
     try {
+      toast.info("Redirecting to payment page...", { autoClose: 3000 });
+
       const response = await apiRequest(
         "POST",
         "/create-checkout-session",
@@ -274,11 +269,13 @@ const Application = () => {
         { Authorization: `Bearer ${token}` }
       );
 
-      if (response.data?.status && response.data?.clientSecret) {
-        // Switch modal view from fee breakdown to Stripe checkout
-        setCheckoutClientSecret(response.data.clientSecret);
-        setShowCheckout(true);
-        setButton(false);
+      if (response.data?.status && response.data?.checkout_url) {
+        // Close modal before redirecting
+        const modalElement = document.getElementById("approveModal");
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        modalInstance?.hide();
+
+        window.location.href = response.data.checkout_url;
       } else {
         toast.error(
           response.data?.message || "Failed to create payment session. Please try again."
@@ -292,47 +289,6 @@ const Application = () => {
       setButton(false);
     }
   };
-
-  // ✅ Called when Stripe Embedded Checkout completes
-  const handleCheckoutComplete = useCallback(() => {
-    // Close the modal
-    const modalElement = document.getElementById("approveModal");
-    const modalInstance = bootstrap.Modal.getInstance(modalElement);
-    modalInstance?.hide();
-
-    // Reset checkout state
-    setCheckoutClientSecret(null);
-    setShowCheckout(false);
-    setSelectedApp(null);
-    setProjectAmount({});
-
-    toast.success("Payment Successful! The application has been approved.", {
-      position: "top-right",
-      autoClose: 4000,
-    });
-
-    // Refresh the applications table to show updated status
-    setTimeout(() => {
-      fetchProjects(page);
-    }, 1500);
-  }, [page]);
-
-  // ✅ Reset checkout state when modal is closed
-  useEffect(() => {
-    const modalElement = document.getElementById("approveModal");
-    if (!modalElement) return;
-
-    const handleModalHidden = () => {
-      setCheckoutClientSecret(null);
-      setShowCheckout(false);
-      setButton(false);
-    };
-
-    modalElement.addEventListener("hidden.bs.modal", handleModalHidden);
-    return () => {
-      modalElement.removeEventListener("hidden.bs.modal", handleModalHidden);
-    };
-  }, []);
 
   return (
     <>
@@ -375,22 +331,19 @@ const Application = () => {
           tabIndex="-1"
           aria-labelledby="approveModalLabel"
           aria-hidden="true"
-          data-bs-backdrop="static"
         >
-          <div className="modal-dialog" style={showCheckout ? { maxWidth: "600px" } : {}}>
+          <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title" id="approveModalLabel">
-                  {showCheckout ? "Complete Payment" : "Approve Proposal"}
+                  Approve Proposal
                 </h5>
-                {!showCheckout && (
-                  <p>
-                    <small>
-                      Fill out the form below to submit a project proposal. You
-                      should receive a response within 48 hours.
-                    </small>
-                  </p>
-                )}
+                <p>
+                  <small>
+                    Fill out the form below to submit a project proposal. You
+                    should receive a response within 48 hours.
+                  </small>
+                </p>
                 <button
                   type="button"
                   className="btn-close"
@@ -400,56 +353,38 @@ const Application = () => {
               </div>
 
               <div className="modal-body">
-                {!showCheckout ? (
-                  <>
-                    <ul>
-                      <li>Price : ${projectAmount.amount}</li>
-                      <li>
-                        Code helper commission : ${projectAmount.admin_amount} (
-                        {projectAmount.admin_commission} %)
-                      </li>
-                      <li>
-                        Payment commission : ${projectAmount.stripe_amount} (
-                        {projectAmount.stripe_commission} %)
-                      </li>
-                      <li>Payment Fee : ${projectAmount.stripe_fee}</li>
-                    </ul>
+                <ul>
+                  <li>Price : ${projectAmount.amount}</li>
+                  <li>
+                    Code helper commission : ${projectAmount.admin_amount} (
+                    {projectAmount.admin_commission} %)
+                  </li>
+                  <li>
+                    Payment commission : ${projectAmount.stripe_amount} (
+                    {projectAmount.stripe_commission} %)
+                  </li>
+                  <li>Payment Fee : ${projectAmount.stripe_fee}</li>
+                </ul>
 
-                    <button
-                      type="button"
-                      disabled={button}
-                      onClick={handleProceedToPayment}
-                      style={{
-                        width: "100%",
-                        padding: "12px",
-                        backgroundColor: "#6772e5",
-                        color: "#fff",
-                        fontWeight: "bold",
-                        border: "none",
-                        borderRadius: "8px",
-                        cursor: button ? "not-allowed" : "pointer",
-                        transition: "background-color 0.3s",
-                        opacity: button ? 0.7 : 1,
-                      }}
-                    >
-                      {button ? "Loading..." : `Pay $${projectAmount.total_amount}`}
-                    </button>
-                  </>
-                ) : (
-                  <div id="checkout-container" style={{ minHeight: "400px" }}>
-                    {checkoutClientSecret && (
-                      <EmbeddedCheckoutProvider
-                        stripe={stripePromise}
-                        options={{
-                          clientSecret: checkoutClientSecret,
-                          onComplete: handleCheckoutComplete,
-                        }}
-                      >
-                        <EmbeddedCheckout />
-                      </EmbeddedCheckoutProvider>
-                    )}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  disabled={button}
+                  onClick={handleProceedToPayment}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    backgroundColor: "#6772e5",
+                    color: "#fff",
+                    fontWeight: "bold",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: button ? "not-allowed" : "pointer",
+                    transition: "background-color 0.3s",
+                    opacity: button ? 0.7 : 1,
+                  }}
+                >
+                  {button ? "Redirecting..." : `Pay $${projectAmount.total_amount}`}
+                </button>
               </div>
             </div>
           </div>

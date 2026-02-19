@@ -291,10 +291,6 @@ const ProjectList = () => {
         accessorKey: "actions",
         header: "Actions",
         cell: ({ row }) => {
-          const status = (row.original.status ?? "").toString().trim().toLowerCase();
-          const isApproved = status === "approved";
-          const applicationId = row.original.selected_application_id;
-          
           return (
             <ActionButton
               id={row.original.id}
@@ -312,13 +308,6 @@ const ProjectList = () => {
                       action: "delete",
                       name: "Delete",
                       deleteUrl: `/project/delete/${row.original.id}`,
-                    }
-                  : null,
-                // Cancel button for approved projects
-                isApproved && applicationId
-                  ? {
-                      name: "Cancel",
-                      url: `/application/cancel/${applicationId}`,
                     }
                   : null,
               ].filter(Boolean)}
