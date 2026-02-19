@@ -232,6 +232,7 @@ const ProjectList = () => {
             not_applied: { label: "Not Applied", className: "badge bg-dark" },
 
             in_progress: { label: "In Progress", className: "badge bg-info" },
+            cancellation_requested: { label: "Cancellation In Progress", className: "badge bg-warning text-dark" },
             on_hold: { label: "On Hold", className: "badge bg-warning text-dark" },
             rejected: { label: "Rejected", className: "badge bg-danger" },
             draft: { label: "Draft", className: "badge bg-dark" },
@@ -293,6 +294,7 @@ const ProjectList = () => {
         cell: ({ row }) => {
           const status = (row.original.status ?? "").toString().trim().toLowerCase();
           const isInProgress = status === "in_progress";
+          const isCancellationRequested = status === "cancellation_requested";
           const selectedAppId = row.original.selected_application_id;
 
           return (
