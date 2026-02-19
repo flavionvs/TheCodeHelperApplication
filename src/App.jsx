@@ -53,6 +53,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ChangePassword from "./pages/ChangePassword";
 import ProjectCreate from "./pages/ProjectCreate";
 import VerifyEmail from "./pages/VerifyEmail";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -115,6 +116,7 @@ const AppLayout = () => {
         <Route path="/" element={<Home />} /> 
         <Route path="/payment" element={<StripePayment />} />
         <Route path="/new-payment" element={<StripePayment />} />
+        <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/apply/:slug" element={<ProjectDetail />} /> 
         {/* <Route path="/projects" element={<ProjectListing />} />  */}
         <Route path="/project/create" element={<ProjectCreate />} /> 
