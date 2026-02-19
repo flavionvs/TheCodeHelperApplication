@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { apiRequest } from "../utils/api";
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -9,17 +10,51 @@ const PaymentSuccess = () => {
 
   const sessionId = searchParams.get("session_id");
   const applicationId = searchParams.get("application_id");
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    if (sessionId) {
-      // Payment was processed by Stripe — webhook handles DB updates
-      // Just show success message
-      setStatus("success");
-      toast.success("Payment Successful!", { autoClose: 5000 });
-    } else {
+    if (!sessionId) {
       setStatus("error");
+      return;
     }
-  }, [sessionId]);
+
+    // Call backend to verify the checkout session and process payment
+    const verifyPayment = async () => {
+      try {
+        const response = await apiRequest(
+          "POST",
+          "/verify-checkout-session",
+          { session_id: sessionId },
+          { Authorization: `Bearer ${token}` }
+        );
+
+        if (response.data?.status) {
+          setStatus("success");
+          toast.success("Payment Successful! Project is now in progress.", {
+            autoClose: 5000,
+          });
+        } else {
+          // Payment might still be processing — show success anyway
+          // since user completed Stripe checkout
+          setStatus("success");
+          toast.info(
+            response.data?.message || "Payment is being processed...",
+            { autoClose: 5000 }
+          );
+        }
+      } catch (err) {
+        console.error("Payment verification error:", err);
+        // Even if verification fails, user already paid on Stripe
+        // Show success — webhook will handle it  
+        setStatus("success");
+        toast.info("Payment received! Processing may take a moment.", {
+          autoClose: 5000,
+        });
+      }
+    };
+
+    verifyPayment();
+  }, [sessionId, token]);
 
   return (
     <section
