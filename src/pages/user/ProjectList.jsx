@@ -273,19 +273,35 @@ const ProjectList = () => {
       {
         accessorKey: "mark_complete",
         header: "Mark Complete",
-        cell: ({ row }) => (
-          <ActionButton
-            id={row.original.id}
-            onDeleteSuccess={handleDeleteSuccess}
-            buttons={[
-              {
-                type: "link",
-                name: "Mark Complete",
-                url: `/project/complete/${row.original.id}`,
-              },
-            ]}
-          />
-        ),
+        cell: ({ row }) => {
+          const appStatus = (row.original.application_status ?? "").trim();
+
+          if (appStatus === "Completion Requested") {
+            return (
+              <span className="badge bg-warning text-dark">Completion Request Sent</span>
+            );
+          }
+
+          if (appStatus === "Completed") {
+            return (
+              <span className="badge bg-success">Approved</span>
+            );
+          }
+
+          return (
+            <ActionButton
+              id={row.original.id}
+              onDeleteSuccess={handleDeleteSuccess}
+              buttons={[
+                {
+                  type: "link",
+                  name: "Mark Complete",
+                  url: `/project/complete/${row.original.id}`,
+                },
+              ]}
+            />
+          );
+        },
       },
 
       {
