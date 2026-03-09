@@ -120,11 +120,10 @@ const Header = () => {
         ) : (
           <div className="outer-box">
             <div className="btn-box">
+              <Link to="/">Home</Link>
               <Link to="/about">About us</Link>
               <Link to="/blog">Blog</Link>
               <Link to="/contact">Contact Us</Link>
-              <Link to="/privacy-policy">Privacy Policy</Link>
-              <Link to="/terms-and-conditions">Terms And Conditions</Link>
 
               {token ? (
                 <>
@@ -302,6 +301,11 @@ const Header = () => {
             ) : (
               <ul className="mobile-nav-list">
                 <li>
+                  <Link to="/" onClick={() => setMobileOpen(false)}>
+                    Home
+                  </Link>
+                </li>
+                <li>
                   <Link to="/about" onClick={() => setMobileOpen(false)}>
                     About us
                   </Link>
@@ -316,19 +320,7 @@ const Header = () => {
                     Contact Us
                   </Link>
                 </li>
-                <li>
-                  <Link to="/privacy-policy" onClick={() => setMobileOpen(false)}>
-                    Privacy Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/terms-and-conditions"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Terms And Conditions
-                  </Link>
-                </li>
+
                 {token ? (
                   <>
                     <li>
