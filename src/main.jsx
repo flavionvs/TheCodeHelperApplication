@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { HelmetProvider } from "react-helmet-async";
 import "./index.css";
 import App from "./App.jsx";
 
@@ -8,6 +9,8 @@ const appContainer = document.querySelector(".page-wrapper");
 document.body.appendChild(appContainer); // Append to <body>
 createRoot(appContainer).render(
   // <StrictMode>
-    <App />
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
   // </StrictMode>
 );

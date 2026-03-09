@@ -121,6 +121,7 @@ const Header = () => {
           <div className="outer-box">
             <div className="btn-box">
               <Link to="/about">About us</Link>
+              <Link to="/blog">Blog</Link>
               <Link to="/contact">Contact Us</Link>
               <Link to="/privacy-policy">Privacy Policy</Link>
               <Link to="/terms-and-conditions">Terms And Conditions</Link>
@@ -303,6 +304,11 @@ const Header = () => {
                 <li>
                   <Link to="/about" onClick={() => setMobileOpen(false)}>
                     About us
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/blog" onClick={() => setMobileOpen(false)}>
+                    Blog
                   </Link>
                 </li>
                 <li>

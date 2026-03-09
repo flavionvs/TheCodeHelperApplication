@@ -53,6 +53,9 @@ import ChangePassword from "./pages/ChangePassword";
 import ProjectCreate from "./pages/ProjectCreate";
 import VerifyEmail from "./pages/VerifyEmail";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import BlogListing from "./pages/BlogListing";
+import BlogDetail from "./pages/BlogDetail";
+import Sitemap from "./pages/Sitemap";
 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -86,6 +89,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 const AppLayout = () => {
   
   const location = useLocation();
+
+  // Sitemap route — renders raw XML, no layout
+  if (location.pathname === "/sitemap.xml") {
+    return <Sitemap />;
+  }
+
   const hideFooterPages = location.pathname.startsWith("/user") || location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/verify-email" || location.pathname === "/link-sent";
 
 
@@ -124,6 +133,8 @@ const AppLayout = () => {
         <Route path="/contact" element={<Contact />} /> 
         <Route path="/privacy-policy" element={<PrivacyPolicy />} /> 
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} /> 
+        <Route path="/blog" element={<BlogListing />} /> 
+        <Route path="/blog/:slug" element={<BlogDetail />} /> 
         <Route path="/freelancer" element={<Freelancer />} /> 
         <Route path="/client" element={<Client />} /> 
         <Route path="view-profile/:profileId" element={<ViewProfile />} />  {/* Relative path (correct way) */}

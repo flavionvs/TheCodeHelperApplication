@@ -1,4 +1,13 @@
 User-agent: *
 Allow: /
+Allow: /blog
+Allow: /about
+Allow: /contact
+Allow: /projects
+Allow: /freelancer
+Allow: /client
+Allow: /privacy-policy
+Allow: /terms-and-conditions
+Disallow: /user/
 
 Sitemap: https://thecodehelper.com/sitemap.xml
