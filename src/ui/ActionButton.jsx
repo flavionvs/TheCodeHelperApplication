@@ -12,6 +12,8 @@ const ActionButton = ({ id, buttons = [], onDeleteSuccess }) => {
   const [showModal, setShowModal] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [cancelModal, setCancelModal] = useState(false);
+  const [cancelFeeConfirmed, setCancelFeeConfirmed] = useState(false);
+  const [cancelCharges, setCancelCharges] = useState(null);
   const [remarks, setRemarks] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [attachments, setAttachments] = useState([]);
@@ -115,6 +117,21 @@ const ActionButton = ({ id, buttons = [], onDeleteSuccess }) => {
                 type="button"
                 onClick={() => {
                   setSubmitUrl(button.url);
+                  setCancelFeeConfirmed(false);
+                  if (button.totalAmount) {
+                    const total = parseFloat(button.totalAmount);
+                    const cancellationFee = total * 0.10;
+                    const stripeProcessing = parseFloat(button.stripeAmount || 0) + parseFloat(button.stripeFee || 0);
+                    const refundAmount = total - cancellationFee - stripeProcessing;
+                    setCancelCharges({
+                      totalPaid: total.toFixed(2),
+                      cancellationFee: cancellationFee.toFixed(2),
+                      stripeProcessing: stripeProcessing.toFixed(2),
+                      refundAmount: refundAmount.toFixed(2),
+                    });
+                  } else {
+                    setCancelCharges(null);
+                  }
                   setCancelModal(true);
                 }}
                 data-text={button.name}
@@ -197,21 +214,63 @@ const ActionButton = ({ id, buttons = [], onDeleteSuccess }) => {
         <div className="modal-backdrop1">
           <div className="modal-box1">
             <h4>Are you sure, you want to cancel ?</h4>
-            <form onSubmit={handleSubmit} encType="multipart/form-data">
-              <div className="form-group">
-                <label>Reason</label>                                        
-                <textarea 
-                  name="cancel_reason" 
-                  className="form-control"
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                ></textarea>
+
+            {cancelCharges && !cancelFeeConfirmed && (
+              <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: '8px', padding: '15px', marginBottom: '15px' }}>
+                <strong style={{ color: '#856404' }}>⚠️ Cancellation Charges</strong>
+                <p style={{ margin: '10px 0 5px', color: '#856404', fontSize: '14px' }}>
+                  The following charges will apply upon cancellation:
+                </p>
+                <table style={{ width: '100%', fontSize: '14px', color: '#333' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: '4px 0' }}>Total Amount Paid:</td>
+                      <td style={{ padding: '4px 0', textAlign: 'right', fontWeight: '600' }}>${cancelCharges.totalPaid}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '4px 0', color: '#dc3545' }}>Cancellation Fee (10%):</td>
+                      <td style={{ padding: '4px 0', textAlign: 'right', fontWeight: '600', color: '#dc3545' }}>-${cancelCharges.cancellationFee}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '4px 0', color: '#dc3545' }}>Stripe Processing Fee:</td>
+                      <td style={{ padding: '4px 0', textAlign: 'right', fontWeight: '600', color: '#dc3545' }}>-${cancelCharges.stripeProcessing}</td>
+                    </tr>
+                    <tr style={{ borderTop: '1px solid #ccc' }}>
+                      <td style={{ padding: '8px 0 4px', fontWeight: '700' }}>Estimated Refund:</td>
+                      <td style={{ padding: '8px 0 4px', textAlign: 'right', fontWeight: '700', color: '#28a745' }}>${cancelCharges.refundAmount}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    className="btn btn-warning"
+                    onClick={() => setCancelFeeConfirmed(true)}
+                  >
+                    I Understand, Proceed
+                  </button>&nbsp;
+                  <button type="button" className="btn btn-secondary" onClick={() => setCancelModal(false)}>Go Back</button>
+                </div>
               </div>
-              <div className="modal-actions mt-3">
-                <button type="submit" className="btn btn-primary">Submit</button>&nbsp;
-                <button type="button" className="btn btn-secondary" onClick={() => setCancelModal(false)}>Close</button>
-              </div>
-            </form>
+            )}
+
+            {(!cancelCharges || cancelFeeConfirmed) && (
+              <form onSubmit={handleSubmit} encType="multipart/form-data">
+                <div className="form-group">
+                  <label>Reason</label>                                        
+                  <textarea 
+                    name="cancel_reason" 
+                    className="form-control"
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                  ></textarea>
+                </div>
+                <div className="modal-actions mt-3">
+                  <button type="submit" className="btn btn-primary">Submit</button>&nbsp;
+                  <button type="button" className="btn btn-secondary" onClick={() => setCancelModal(false)}>Close</button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

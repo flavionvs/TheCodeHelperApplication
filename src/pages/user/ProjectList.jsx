@@ -336,6 +336,10 @@ const ProjectList = () => {
                   ? {
                       name: "Cancel",
                       url: `/application/cancel/${selectedAppId}`,
+                      totalAmount: row.original.total_amount,
+                      freelancerAmount: row.original.freelancer_amount,
+                      stripeAmount: row.original.stripe_amount,
+                      stripeFee: row.original.stripe_fee,
                     }
                   : null,
               ].filter(Boolean)}
