@@ -1735,3 +1735,341 @@ a.page-link {
   align-items: center;
   justify-content: center;
 }
+
+/* ========================================
+   LANDING PAGE STYLES (RegisterClient / RegisterFreelancer)
+   ======================================== */
+
+/* --- Hero Section --- */
+.landing-hero {
+  position: relative;
+  padding: 120px 0 80px;
+  overflow: hidden;
+}
+.landing-hero--client {
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f5e9 100%);
+}
+.landing-hero--freelancer {
+  background: linear-gradient(135deg, #e8f5e9 0%, #f0f7ff 100%);
+}
+.landing-hero__content {
+  padding-right: 40px;
+}
+.landing-hero__badge {
+  display: inline-block;
+  background: linear-gradient(45deg, #236e9f, #4e9d5a);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 18px;
+  border-radius: 50px;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.landing-hero__content h1 {
+  font-size: 42px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #202124;
+  margin-bottom: 20px;
+}
+.landing-accent {
+  color: #1967d2;
+}
+.landing-hero__subtitle {
+  font-size: 18px;
+  line-height: 1.7;
+  color: #555;
+  margin-bottom: 30px;
+  max-width: 540px;
+}
+.landing-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 30px;
+}
+.landing-outline-btn {
+  display: inline-block;
+  border: 2px solid #236e9f;
+  color: #236e9f;
+  border-radius: 10px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+.landing-outline-btn:hover {
+  background: #236e9f;
+  color: #fff;
+}
+.landing-hero__trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.landing-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #444;
+  font-weight: 500;
+}
+.landing-trust-item i {
+  font-size: 18px;
+  color: #4e9d5a;
+}
+.landing-hero__image {
+  position: relative;
+}
+.landing-hero__image img {
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+  width: 100%;
+  object-fit: cover;
+  max-height: 420px;
+}
+
+/* --- How It Works / Steps --- */
+.landing-steps {
+  padding: 80px 0;
+}
+.landing-section-subtitle {
+  font-size: 16px;
+  color: #696969;
+  margin-top: -10px;
+}
+.landing-step-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 35px 28px;
+  text-align: center;
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+}
+.landing-step-card:hover,
+.landing-step-card--active {
+  border-color: #1967d2;
+  box-shadow: 0 10px 35px rgba(25, 103, 210, 0.1);
+  transform: translateY(-4px);
+}
+.landing-step-number {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(45deg, #236e9f, #4e9d5a);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+.landing-step-icon {
+  font-size: 42px;
+  color: #1967d2;
+  margin-bottom: 18px;
+}
+.landing-step-card h4 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #202124;
+  margin-bottom: 10px;
+}
+.landing-step-card p {
+  font-size: 14px;
+  color: #696969;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+/* --- Benefits Section --- */
+.landing-benefits {
+  padding: 80px 0;
+}
+.landing-extra-benefits {
+  padding: 80px 0;
+}
+.landing-benefit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.landing-benefit-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.landing-benefit-icon {
+  flex-shrink: 0;
+  font-size: 24px;
+  color: #4e9d5a;
+  margin-top: 2px;
+}
+.landing-benefit-item h5 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #202124;
+  margin-bottom: 4px;
+}
+.landing-benefit-item p {
+  font-size: 14px;
+  color: #696969;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+/* --- Social Proof / Stats Bar --- */
+.landing-social-proof {
+  background: linear-gradient(45deg, #236e9f 0%, #4e9d5a 100%);
+  padding: 50px 0;
+}
+.landing-stat h3 {
+  font-size: 36px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.landing-stat p {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 0;
+}
+
+/* --- Stat Cards (Freelancer page) --- */
+.landing-stat-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 30px 20px;
+  transition: all 0.3s ease;
+}
+.landing-stat-card:hover {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
+}
+.landing-stat-card h3 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #202124;
+  margin: 10px 0 4px;
+}
+.landing-stat-card p {
+  font-size: 14px;
+  color: #696969;
+  margin-bottom: 0;
+}
+
+/* --- Categories Section --- */
+.landing-categories {
+  padding: 80px 0;
+}
+
+/* --- Registration Form Section --- */
+.landing-register-section {
+  padding: 80px 0;
+  background: #f8f9fb;
+}
+.landing-form-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 45px 40px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.08);
+  border: 1px solid #eaeaea;
+}
+.landing-form-card h2 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #202124;
+}
+.landing-form-subtitle {
+  font-size: 15px;
+  color: #696969;
+  margin-top: 6px;
+}
+.landing-form-card .form-group {
+  margin-bottom: 18px;
+}
+.landing-form-card label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 6px;
+  display: block;
+}
+.landing-form-card input[type="text"],
+.landing-form-card input[type="email"],
+.landing-form-card input[type="password"],
+.landing-form-card select {
+  width: 100%;
+  height: 50px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 15px;
+  color: #333;
+  transition: border-color 0.3s ease;
+  outline: none;
+}
+.landing-form-card input:focus,
+.landing-form-card select:focus {
+  border-color: #1967d2;
+  box-shadow: 0 0 0 3px rgba(25, 103, 210, 0.1);
+}
+
+/* --- Responsive --- */
+@media only screen and (max-width: 991px) {
+  .landing-hero {
+    padding: 100px 0 60px;
+  }
+  .landing-hero__content {
+    padding-right: 0;
+    margin-bottom: 40px;
+  }
+  .landing-hero__content h1 {
+    font-size: 32px;
+  }
+  .landing-hero__subtitle {
+    font-size: 16px;
+  }
+  .landing-form-card {
+    padding: 30px 24px;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .landing-hero__content h1 {
+    font-size: 28px;
+  }
+  .landing-hero__ctas {
+    flex-direction: column;
+  }
+  .landing-hero__trust {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .landing-stat h3 {
+    font-size: 28px;
+  }
+  .landing-steps,
+  .landing-benefits,
+  .landing-extra-benefits,
+  .landing-categories,
+  .landing-register-section {
+    padding: 50px 0;
+  }
+  .landing-benefits__images {
+    margin-top: 30px;
+  }
+  .landing-freelancer-stats {
+    margin-top: 30px;
+  }
+}

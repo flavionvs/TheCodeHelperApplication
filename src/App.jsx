@@ -56,6 +56,8 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import BlogListing from "./pages/BlogListing";
 import BlogDetail from "./pages/BlogDetail";
 import Sitemap from "./pages/Sitemap";
+import RegisterClient from "./pages/RegisterClient";
+import RegisterFreelancer from "./pages/RegisterFreelancer";
 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -95,7 +97,7 @@ const AppLayout = () => {
     return <Sitemap />;
   }
 
-  const hideFooterPages = location.pathname.startsWith("/user") || location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/verify-email" || location.pathname === "/link-sent";
+  const hideFooterPages = location.pathname.startsWith("/user") || location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/verify-email" || location.pathname === "/link-sent" || location.pathname === "/register-client" || location.pathname === "/register-freelancer";
 
 
   useEffect(() => {
@@ -140,6 +142,8 @@ const AppLayout = () => {
         <Route path="view-profile/:profileId" element={<ViewProfile />} />  {/* Relative path (correct way) */}
 
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} /> 
+        <Route path="/register-client" element={<PublicRoute><RegisterClient /></PublicRoute>} /> 
+        <Route path="/register-freelancer" element={<PublicRoute><RegisterFreelancer /></PublicRoute>} /> 
         <Route path="/verify-email" element={<PublicRoute><VerifyEmail /></PublicRoute>} /> 
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} /> 
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} /> 
