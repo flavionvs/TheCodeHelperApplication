@@ -93,6 +93,21 @@ const Register = () => {
       const response = await apiRequest("POST", "/register", payload);
 
       if (response.data?.status) {
+        // Fire conversion tracking events
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'sign_up',
+          method: 'email',
+          user_role: payload.role,
+          registration_source: 'register_page',
+        });
+        if (typeof window.fbq === 'function') {
+          window.fbq('track', 'CompleteRegistration', {
+            content_name: payload.role,
+            status: true,
+          });
+        }
+
         // Check if email verification is required
         if (response.data?.requires_verification) {
           toast.success(response.data.message, {

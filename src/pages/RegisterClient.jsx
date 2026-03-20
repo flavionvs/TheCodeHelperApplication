@@ -65,6 +65,21 @@ const RegisterClient = () => {
       const response = await apiRequest("POST", "/register", payload);
 
       if (response.data?.status) {
+        // Fire conversion tracking events
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'sign_up',
+          method: 'email',
+          user_role: 'Client',
+          registration_source: 'register_client_landing',
+        });
+        if (typeof window.fbq === 'function') {
+          window.fbq('track', 'CompleteRegistration', {
+            content_name: 'Client',
+            status: true,
+          });
+        }
+
         if (response.data?.requires_verification) {
           toast.success(response.data.message, { position: "top-right", autoClose: 3000 });
           navigate("/verify-email", {
