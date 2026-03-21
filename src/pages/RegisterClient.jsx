@@ -129,14 +129,14 @@ const RegisterClient = () => {
                   Find the Right <span className="landing-accent">IT Freelancer</span> for Your Project
                 </h1>
                 <p className="landing-hero__subtitle">
-                  Post your project on The Code Helper and connect with vetted freelance developers, designers, and IT professionals — ready to deliver.
+                  Post your project on The Code Helper and connect with vetted freelance developers, designers, and IT professionals ready to deliver.
                 </p>
                 <div className="landing-hero__ctas">
                   <button type="button" className="button-87 px-5 py-3 ms-0" onClick={scrollToForm}>
-                    Post Your Project — It's Free
+                    Post Your Project for Free
                   </button>
                   <Link to="/projects" className="landing-outline-btn px-4 py-3">
-                    Explore Freelancers
+                    Explore Other Projects
                   </Link>
                 </div>
                 <div className="landing-hero__trust">
@@ -177,7 +177,7 @@ const RegisterClient = () => {
                 <div className="landing-step-number">1</div>
                 <div className="landing-step-icon"><i className="bi bi-pencil-square"></i></div>
                 <h4>Post Your Project</h4>
-                <p>Describe what you need — from web development to cloud setup, AI integration, or mobile apps.</p>
+                <p>Describe what you need, from web development to cloud setup, AI integration, or mobile apps.</p>
               </div>
             </div>
             <div className="col-md-4">
@@ -221,7 +221,7 @@ const RegisterClient = () => {
                   <div className="landing-benefit-icon"><i className="bi bi-check-circle-fill"></i></div>
                   <div>
                     <h5>Scale On Demand</h5>
-                    <p>Hire for a single task or build an entire team — scale up or down as your project evolves.</p>
+                    <p>Hire for a single task or build an entire team. Scale up or down as your project evolves.</p>
                   </div>
                 </div>
                 <div className="landing-benefit-item">

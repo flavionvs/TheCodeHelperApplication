@@ -132,14 +132,14 @@ const RegisterFreelancer = () => {
               <div className="landing-hero__content">
                 <span className="landing-hero__badge">IT Freelancer Marketplace</span>
                 <h1>
-                  Find Freelance <span className="landing-accent">Development Projects</span> That Pay Well
+                  Find Freelance <span className="landing-accent">IT Projects</span> That Pay Your Rate
                 </h1>
                 <p className="landing-hero__subtitle">
                   Join The Code Helper marketplace and connect with businesses looking for skilled developers. Choose projects you love, set your own rates, and grow your freelance career.
                 </p>
                 <div className="landing-hero__ctas">
                   <button type="button" className="button-87 px-5 py-3 ms-0" onClick={scrollToForm}>
-                    Join as a Freelancer — Free
+                    Join as a Freelancer for Free
                   </button>
                   <Link to="/projects" className="landing-outline-btn px-4 py-3">
                     Browse Available Projects
@@ -218,7 +218,7 @@ const RegisterFreelancer = () => {
               <div className="why-box text-center">
                 <img src={free1} className="img-fluid mb-3" alt="Choose projects you love" style={freelancerImgStyle} loading="lazy" />
                 <h4>Select Your Kind of Projects</h4>
-                <p>Choose projects that match your skills, interests, and schedule — no pressure to take everything.</p>
+                <p>Choose projects that match your skills, interests, and schedule. No pressure to take everything.</p>
               </div>
             </div>
             <div className="col-md-4">
@@ -232,7 +232,7 @@ const RegisterFreelancer = () => {
               <div className="why-box text-center">
                 <img src={free3} className="img-fluid mb-3" alt="Work independently" style={freelancerImgStyle} loading="lazy" />
                 <h4>Work Independently</h4>
-                <p>Build your freelance career your way — manage your time, grow your profile, and work with projects you like.</p>
+                <p>Build your freelance career your way. Manage your time, grow your profile, and work with projects you like.</p>
               </div>
             </div>
           </div>
@@ -259,7 +259,7 @@ const RegisterFreelancer = () => {
                   <div className="landing-benefit-icon"><i className="bi bi-check-circle-fill"></i></div>
                   <div>
                     <h5>Diverse Project Categories</h5>
-                    <p>From web & mobile apps to cloud, AI, data science, and cybersecurity — find projects in your niche.</p>
+                    <p>From web and mobile apps to cloud, AI, data science, and cybersecurity. Find projects in your niche.</p>
                   </div>
                 </div>
                 <div className="landing-benefit-item">
@@ -280,7 +280,7 @@ const RegisterFreelancer = () => {
                   <div className="landing-benefit-icon"><i className="bi bi-check-circle-fill"></i></div>
                   <div>
                     <h5>Work From Anywhere</h5>
-                    <p>100% remote projects — work from your home, a café, or anywhere with an internet connection.</p>
+                    <p>100% remote projects. Work from your home, a café, or anywhere with an internet connection.</p>
                   </div>
                 </div>
               </div>
@@ -545,7 +545,7 @@ const RegisterFreelancer = () => {
                   {/* Submit */}
                   <div className="form-group">
                     <button className="button-87 text-uppercase w-100 mx-0 py-3" type="submit" disabled={loading}>
-                      {loading ? "Creating Your Account..." : "Start Freelancing — It's Free"}
+                      {loading ? "Creating Your Account..." : "Start Freelancing for Free"}
                     </button>
                   </div>
                 </form>
@@ -574,7 +574,7 @@ const RegisterFreelancer = () => {
             <div className="form-column">
               <div className="d-flex align-items-center gap-3 h-100">
                 <button type="button" className="button-87 mx-0 px-5 py-3" onClick={scrollToForm}>
-                  Join Now — Free <i className="bi bi-arrow-up-right ms-2"></i>
+                  Join Now for Free <i className="bi bi-arrow-up-right ms-2"></i>
                 </button>
               </div>
             </div>
